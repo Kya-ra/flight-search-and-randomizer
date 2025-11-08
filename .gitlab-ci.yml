@@ -26,8 +26,18 @@ test:
   stage: test
   tags:
     - docker
+  services:
+    - name: mysql:latest
+      alias: mysql
+      command: ["--default-authentication-plugin=mysql_native_password"]
+  variables:
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/CSU33012
+    SPRING_DATASOURCE_USERNAME: scss
+    SPRING_DATASOURCE_PASSWORD: scss
   script:
     - cd backend
+    # Wait until MySQL is ready
+    - until mysqladmin ping -h mysql --silent; do echo "Waiting for MySQL..."; sleep 2; done
     - mvn test
   artifacts:
     reports:
