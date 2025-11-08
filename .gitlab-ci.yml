@@ -35,11 +35,10 @@ test:
     SPRING_DATASOURCE_USERNAME: scss
     SPRING_DATASOURCE_PASSWORD: scss
   script:
-    - apk add --no-cache mysql-client
-    - cd backend
-    # Wait until MySQL is ready
-    - until mysqladmin ping -h mysql --silent; do echo "Waiting for MySQL..."; sleep 2; done
-    - mvn test
+  - apk add --no-cache mariadb-client    # installs mariadb-admin / mysqladmin
+  - cd backend
+  - until mariadb-admin ping -h mysql --silent; do echo "Waiting for MySQL..."; sleep 2; done
+  - mvn test
   artifacts:
     reports:
       junit: backend/target/surefire-reports/TEST-*.xml
