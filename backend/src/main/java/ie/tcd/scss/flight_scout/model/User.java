@@ -1,7 +1,5 @@
 package ie.tcd.scss.flight_scout.model;
 
-import java.util.List;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,19 +16,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 150)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private UserPreference preference;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SearchHistory> searches;
 }
 
