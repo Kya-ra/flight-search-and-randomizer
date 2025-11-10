@@ -18,14 +18,9 @@ function App() {
   return (
     <div>
       <Header />
-    <Card title="Todo List App">
-      <TodoApp />
+    <Card>
+      <MultiInputForm />
     </Card>
-
-      <Box>
-        <h2>Hello</h2>
-        <p>This is inside the box!</p>
-      </Box>
 
     </div>
     
