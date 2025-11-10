@@ -33,6 +33,7 @@ public class FlightSearchService {
      * @param outboundDate Format: YYYY-MM-DD
      * @param flight_type 1=Round-trip, 2=One-way, 3=Multi-city
      * @param returnDate Format: YYYY-MM-DD (null for one-way)
+     * @param departureToken Token from selected outbound flight (optional, for return flights)
      * @param adults Number of adult passengers (default: 1)
      * @param children Number of child passengers (default: 0)
      * @param travelClass 1=Economy, 2=Premium, 3=Business, 4=First (default: 1)
@@ -46,6 +47,7 @@ public class FlightSearchService {
             String outboundDate,
             Integer flight_type,
             String returnDate,
+            String departureToken,
             Integer adults,
             Integer children,
             Integer travelClass,
@@ -54,7 +56,8 @@ public class FlightSearchService {
 
         // Build SerpAPI URL with parameters
         String url = buildSerpApiUrl(origin, destination, outboundDate,  returnDate,
-                                     adults, children, travelClass, currency, flight_type);
+                                     departureToken, adults, children, travelClass, currency, flight_type);
+
 
         // Make API call
         String jsonResponse = restTemplate.getForObject(url, String.class);
@@ -84,45 +87,9 @@ public class FlightSearchService {
         return response;
     }
 
-    /**
-     * Get return flight options using a departure token from a selected outbound flight.
-     * Used for round-trip bookings after user selects an outbound flight.
-     *
-     * @param departureToken The departure token from the selected outbound flight
-     * @param origin Original departure airport (e.g., "DUB")
-     * @param destination Original arrival airport (e.g., "BCN")
-     * @param returnDate Return date in YYYY-MM-DD format
-     * @return FlightSearchResponse containing available return flights
-     */
-    public FlightSearchResponse getReturnFlights(String departureToken, String origin,
-                                                 String destination, String returnDate) {
-        // Build SerpAPI URL with departure token AND required search parameters
-        String url = UriComponentsBuilder
-                .fromHttpUrl(SERP_API_URL)
-                .queryParam("engine", "google_flights")
-                .queryParam("api_key", serpApiKey)
-                .queryParam("departure_token", departureToken)
-                .queryParam("departure_id", destination)  // Return flight starts from destination
-                .queryParam("arrival_id", origin)         // Return flight goes back to origin
-                .queryParam("outbound_date", returnDate)  // The return date becomes outbound for this search
-                .queryParam("type", "2")                  // One-way search for return leg
-                .queryParam("currency", "EUR")
-                .queryParam("hl", "en")
-                .toUriString();
-
-        // Make API call
-        String jsonResponse = restTemplate.getForObject(url, String.class);
-
-        // Parse JSON response - origin/destination are swapped for return flight
-        FlightSearchResponse response = parseReturnFlightResponse(jsonResponse, destination, origin);
-
-        return response;
-    }
-
-
     //Build the SerpAPI URL with all query parameters
     private String buildSerpApiUrl(String origin, String destination, String outboundDate,
-                                   String returnDate, Integer adults, Integer children,
+                                   String returnDate, String departureToken, Integer adults, Integer children,
                                    Integer travelClass, String currency, Integer flight_type) {
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(SERP_API_URL)
@@ -135,11 +102,10 @@ public class FlightSearchService {
                 .queryParam("currency", currency != null ? currency : "EUR")
                 .queryParam("hl", "en");
 
-        if(flight_type == 1){                               // Round-trip so we need a return date
+        // Add return date for round-trip searches
+        if(flight_type == 1){
             builder.queryParam("return_date", returnDate);
         }
-        
-        
 
         // Add optional passenger parameters
         if (adults != null && adults > 0) {
@@ -154,7 +120,15 @@ public class FlightSearchService {
             builder.queryParam("travel_class", travelClass);
         }
 
-        return builder.toUriString();
+        // Build the URI - encode=false to prevent double-encoding
+        String baseUrl = builder.build(false).toUriString();
+
+        // Manually add departure token (Avoid double-encoding)
+        if (departureToken != null && !departureToken.isEmpty()) {
+            baseUrl += "&departure_token=" + departureToken;
+        }
+
+        return baseUrl;
     }
 
 
@@ -234,63 +208,6 @@ public class FlightSearchService {
             FlightSearchResponse errorResponse = new FlightSearchResponse();
             errorResponse.setOrigin(origin);
             errorResponse.setDestination(destination);
-            errorResponse.setFlights(new ArrayList<>());
-            errorResponse.setTotalResults(0);
-            return errorResponse;
-        }
-    }
-
-    /**
-     * Parse return flight response from SerpAPI
-     * Used when fetching return flights with a departure token
-     */
-    private FlightSearchResponse parseReturnFlightResponse(String jsonResponse, String origin, String destination) {
-        try {
-            JsonNode root = objectMapper.readTree(jsonResponse);
-
-            List<Flight> allFlights = new ArrayList<>();
-
-            // Parse best_flights array
-            JsonNode bestFlights = root.path("best_flights");
-            if (bestFlights.isArray()) {
-                for (JsonNode flightNode : bestFlights) {
-                    Flight flight = parseFlightFromNode(flightNode, origin, destination);
-                    if (flight != null) {
-                        allFlights.add(flight);
-                    }
-                }
-            }
-
-            // Parse other_flights array
-            JsonNode otherFlights = root.path("other_flights");
-            if (otherFlights.isArray()) {
-                for (JsonNode flightNode : otherFlights) {
-                    Flight flight = parseFlightFromNode(flightNode, origin, destination);
-                    if (flight != null) {
-                        allFlights.add(flight);
-                    }
-                }
-            }
-
-            // Find cheapest price
-            Double cheapestPrice = allFlights.stream()
-                    .mapToDouble(Flight::getPrice)
-                    .min()
-                    .orElse(0.0);
-
-            FlightSearchResponse response = new FlightSearchResponse();
-            response.setOrigin(origin);
-            response.setDestination(destination);
-            response.setFlights(allFlights);
-            response.setTotalResults(allFlights.size());
-            response.setCheapestPrice(cheapestPrice);
-
-            return response;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Return empty response on error
-            FlightSearchResponse errorResponse = new FlightSearchResponse();
             errorResponse.setFlights(new ArrayList<>());
             errorResponse.setTotalResults(0);
             return errorResponse;
