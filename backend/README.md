@@ -2,6 +2,41 @@
 
 Spring Boot backend for the Budget Flight Finder application.
 
+## Setup
+
+### 1. Environment Variables
+
+
+Create a `.env` file in the `backend/` directory (already gitignored):
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your SerpAPI key:
+```
+SERPAPI_API_KEY=your_actual_key_here
+```
+
+Get your key from: https://serpapi.com/manage-api-key
+
+### 2. Running the Application
+
+**Option A: With .env file (using spring-boot-dotenv)**
+```bash
+./mvnw spring-boot:run
+```
+
+**Option B: With environment variable directly**
+```bash
+# Windows (PowerShell)
+$env:SERPAPI_API_KEY="your_key_here"; ./mvnw spring-boot:run
+
+# Linux/Mac
+SERPAPI_API_KEY=your_key_here ./mvnw spring-boot:run
+```
+
+
 # Model
 Relationships Summary
 

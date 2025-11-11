@@ -1,11 +1,18 @@
 image: maven:3.9.11-eclipse-temurin-21-alpine
 
 cache:
+  key: ${CI_COMMIT_REF_SLUG}
   paths:
     - .m2/repository
 
 variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"    
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_NAME: CSU33012
+  DB_USER: scss
+  DB_PASS: scss
+  SERPAPI_API_KEY: "dummy_ci_key"
 
 stages:
   - build
@@ -17,18 +24,35 @@ build:
     - docker
   script:
     - cd backend
-    - mvn clean compile
+    - mvn -B clean compile
   artifacts:
     paths:
       - backend/target/
+    expire_in: 1 week
 
 test:
   stage: test
   tags:
     - docker
+  services:
+    - name: mysql:latest
+      alias: mysql
+  variables:
+    MYSQL_ROOT_PASSWORD: root
+    MYSQL_DATABASE: CSU33012
+    MYSQL_USER: scss
+    MYSQL_PASSWORD: scss
   script:
     - cd backend
-    - mvn test
+    - apk add --no-cache netcat-openbsd > /dev/null
+    - echo "Waiting for MySQL to start on $DB_HOST:$DB_PORT..."
+    - timeout 120 sh -c 'until nc -z "$DB_HOST" "$DB_PORT"; do sleep 2; done'
+    - echo "✅ MySQL is ready, running tests..."
+    - mvn -B clean test -Dsurefire.useFile=true -Dspring.datasource.url=jdbc:mysql://$DB_HOST:$DB_PORT/$DB_NAME -Dspring.datasource.username=$DB_USER -Dspring.datasource.password=$DB_PASS
   artifacts:
+    when: always
+    paths:
+      - backend/target/surefire-reports/
     reports:
-      junit: backend/target/surefire-reports/TEST-*.xml
+      junit:
+        - backend/target/surefire-reports/TEST-*.xml
