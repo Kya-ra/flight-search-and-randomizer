@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { registerLocale } from "react-datepicker";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { enIE } from "date-fns/locale/en-IE";
+
+registerLocale("en-IE", enIE);
 
 export default function SearchForm() {
   const [form, setForm] = useState({
@@ -51,6 +55,7 @@ export default function SearchForm() {
         }
         placeholderText="Outbound"
         dateFormat="dd/MM/yyyy"
+        locale="en-IE"
         required
       />
 
@@ -61,6 +66,7 @@ export default function SearchForm() {
         }
         placeholderText="Return"
         dateFormat="dd/MM/yyyy"
+        locale="en-IE"
       />
 
       <button type="submit">Search</button>
