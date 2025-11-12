@@ -1,0 +1,28 @@
+.flight-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem; 
+  max-width: 1200px;
+  margin: 2rem auto; 
+}
+
+.flight-card {
+  width: 18rem;
+  border: 1px solid #ddd;
+  border-radius: 1rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.flight-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.flight-card img {
+  height: 80px;
+  margin-bottom: 0.5rem;
+}
