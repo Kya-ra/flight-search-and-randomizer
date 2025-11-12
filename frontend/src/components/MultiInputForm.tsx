@@ -26,7 +26,7 @@ export default function SearchForm() {
     e.preventDefault();
     console.log("Form submitted:", form);
 
-    const flight_type = form.return ? 2 : 1;
+    const flight_type = form.return ? 1 : 2;
 
     // Convert dates to YYYY-MM-DD strings
     const outboundDateStr = form.outbound
