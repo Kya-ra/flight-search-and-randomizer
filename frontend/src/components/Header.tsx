@@ -1,3 +1,3 @@
 export default function Header() {
-  return <h1>Cheap Flight Finder</h1>;
+  return <h1>SkySaver</h1>;
 }

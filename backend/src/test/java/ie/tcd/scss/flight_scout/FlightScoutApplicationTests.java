@@ -8,6 +8,7 @@ class FlightScoutApplicationTests {
 
 	@Test
 	void contextLoads() {
+		return;
 	}
 
 }
