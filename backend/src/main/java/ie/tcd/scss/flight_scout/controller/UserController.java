@@ -22,7 +22,7 @@ public class UserController {
      @param User the User to save
      */
     @GetMapping("/saveUser")
-    public ResponseEntity<User> searchFlights(
+    public ResponseEntity<User> saveUser(
             @RequestParam User newUser
             ) {
 
