@@ -36,7 +36,7 @@ services:
   frontend:
     image: node:20
     container_name: frontend
-    working_dir: /app/frontendr
+    working_dir: /app/frontend
     command: sh -c "npm install && npm run dev -- --host"
     volumes:
       - ./frontend:/app/frontend

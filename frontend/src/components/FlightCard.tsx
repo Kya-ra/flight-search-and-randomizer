@@ -1,23 +1,62 @@
-import type { ReactNode } from "react";
+import React from "react";
+import "./FlightCard.css";
 
-interface CardProps {
-  title?: string;
-  children: ReactNode;
+interface Flight {
+  origin: string;
+  destination: string;
+  price: number;
+  airline: string;
+  airlineLogo: string;
+  airplane: string;
+  arrivalTime: string;
+  departureTime: string;
+  durationMinutes: number;
+  layovers: number;
+  currency: string;
 }
 
-export default function FlightCard({ title, children }: CardProps) {
+interface FlightSearchResponse {
+  origin: string;
+  destination: string;
+  outboundDate: string;
+  returnDate: string;
+  totalResults: number;
+  cheapestPrice: number;
+  flights: Flight[];
+}
+
+interface FlightCardProps {
+  data: FlightSearchResponse;
+}
+
+const FlightCard: React.FC<FlightCardProps> = ({ data }) => {
+  if (!data || !data.flights?.length) {
+    return <p>No flights found.</p>;
+  }
+
   return (
-    <div
-      style={{
-        padding: "1rem",
-        background: "#242424",
-        borderRadius: "10px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        marginBottom: "1rem",
-      }}
-    >
-      {title && <h3 style={{ marginTop: 0 }}>{title}</h3>}
-      {children}
+    <div className="flight-grid">
+      {data.flights.map((flight, index) => (
+        <div key={index} className="flight-card">
+          <img src={flight.airlineLogo} alt={flight.airline} />
+            <h3>
+            {flight.airline}{" "}
+            {flight.airlineLogo ===
+            "https://www.gstatic.com/flights/airline_logos/70px/multi.png"
+                ? `+ ${flight.layovers} more`
+                : ""}
+            </h3>
+          <p>
+            {new Date(flight.departureTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}  →  {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </p>
+          <p>Duration: {Math.floor(flight.durationMinutes / 60)}h {flight.durationMinutes % 60}m</p>
+          <p>Layovers: {flight.layovers}</p>
+          <p><strong>{flight.price} {flight.currency}</strong></p>
+        </div>
+      ))}
     </div>
   );
-}
+};
+
+
+export default FlightCard;
