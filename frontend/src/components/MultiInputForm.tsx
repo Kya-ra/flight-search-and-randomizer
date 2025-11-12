@@ -40,6 +40,7 @@ export default function SearchForm() {
   });
 
   const [flightData, setFlightData] = useState<FlightSearchResponse | null>(null);
+  const [returnFlightData, setReturnFlightData] = useState<FlightSearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,15 +52,13 @@ export default function SearchForm() {
     }));
   }
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setFlightData(null);
     setLoading(true);
 
     try {
-      const flight_type = form.return ? 1 : 2;
-
       const outboundDateStr = form.outbound
         ? form.outbound.toISOString().split("T")[0]
         : "";
@@ -71,24 +70,53 @@ export default function SearchForm() {
         origin: form.origin,
         destination: form.destination,
         outboundDate: outboundDateStr,
-        flight_type: flight_type.toString(),
+        flight_type: "2",
       });
 
-      if (returnDateStr) {
-        params.append("returnDate", returnDateStr);
-      }
-
-      const response = await fetch(
+      // --- OUTBOUND FLIGHTS ---
+      const outboundResponse = await fetch(
         `http://localhost:8080/api/flights/search?${params.toString()}`
       );
 
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!outboundResponse.ok)
+        throw new Error(`HTTP error! status: ${outboundResponse.status}`);
 
-      const data: FlightSearchResponse = await response.json();
-      console.log("Flight search response:", data);
+      const outboundData: FlightSearchResponse = await outboundResponse.json();        
+      outboundData.flights.sort((a, b) => {
+        if (a.price === 0 && b.price === 0) return 0;
+        if (a.price === 0) return 1;
+        if (b.price === 0) return -1;
+        return a.price - b.price;
+      });
+      console.log("Outbound flight search response:", outboundData);
+      setFlightData(outboundData);
 
-      setFlightData(data);
+      // --- RETURN FLIGHTS (only if return date exists) ---
+      if (returnDateStr) {
+        const returnParams = new URLSearchParams({
+          origin: form.destination,
+          destination: form.origin,
+          outboundDate: returnDateStr,
+          flight_type: "2",
+        });
+
+        const returnResponse = await fetch(
+          `http://localhost:8080/api/flights/search?${returnParams.toString()}`
+        );
+
+        if (!returnResponse.ok)
+          throw new Error(`HTTP error! status: ${returnResponse.status}`);
+
+        const returnData: FlightSearchResponse = await returnResponse.json();
+        returnData.flights.sort((a, b) => {
+        if (a.price === 0 && b.price === 0) return 0;
+        if (a.price === 0) return 1;
+        if (b.price === 0) return -1;
+        return a.price - b.price;
+      });
+        console.log("Return flight search response:", returnData);
+        setReturnFlightData(returnData);
+      }
     } catch (err: any) {
       console.error("Error fetching flights:", err);
       setError(err.message || "Error fetching flights");
@@ -97,7 +125,8 @@ export default function SearchForm() {
     }
   }
 
-    return (
+
+  return (
     <div className="p-6">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md">
         <input
@@ -138,17 +167,32 @@ export default function SearchForm() {
         </button>
       </form>
 
-      {}
+      { }
       {loading && <p className="mt-4 text-gray-600">Loading flights…</p>}
       {error && <p className="mt-4 text-red-500">{error}</p>}
 
-      {}
+      { }
       {flightData && (
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-4">
             {flightData.origin} → {flightData.destination}
+            <p>
+              From{" "}
+              {flightData.flights[0].price +
+                (form.return && returnFlightData?.flights?.[0]?.price
+                  ? returnFlightData.flights[0].price
+                  : 0)} {flightData.flights[0].currency} {(form.return ? "roundtrip" : "one-way")}
+            </p>
           </h2>
           <FlightCard data={flightData} />
+        </div>
+      )}
+            {returnFlightData && (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4">
+            {returnFlightData.origin} → {returnFlightData.destination}
+          </h2>
+          <FlightCard data={returnFlightData} />
         </div>
       )}
     </div>

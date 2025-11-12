@@ -39,13 +39,15 @@ const FlightCard: React.FC<FlightCardProps> = ({ data }) => {
       {data.flights.map((flight, index) => (
         <div key={index} className="flight-card">
           <img src={flight.airlineLogo} alt={flight.airline} />
-          <h3>{flight.airline}</h3>
-          <p>{flight.origin} → {flight.destination}</p>
+            <h3>
+            {flight.airline}{" "}
+            {flight.airlineLogo ===
+            "https://www.gstatic.com/flights/airline_logos/70px/multi.png"
+                ? `+ ${flight.layovers} more`
+                : ""}
+            </h3>
           <p>
-            Depart: {new Date(flight.departureTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </p>
-          <p>
-            Arrive: {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            {new Date(flight.departureTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}  →  {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </p>
           <p>Duration: {Math.floor(flight.durationMinutes / 60)}h {flight.durationMinutes % 60}m</p>
           <p>Layovers: {flight.layovers}</p>
