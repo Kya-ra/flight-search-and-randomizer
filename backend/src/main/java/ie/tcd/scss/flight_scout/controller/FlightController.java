@@ -72,4 +72,33 @@ public class FlightController {
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Flight search service is running");
     }
+
+    /**
+     * Search for flights across a flexible date range and budget.
+     *
+     * @param origin Airport code (required) - e.g., "DUB"
+     * @param destination Airport code (required) - e.g., "BCN"
+     * @param startDate Start of flexible date range (YYYY-MM-DD)
+     * @param endDate End of flexible date range (YYYY-MM-DD)
+     * @param maxBudget Maximum price filter (optional)
+     * @param flightType Type of trip (optional, default = 2 → one-way)
+     * @param currency Currency code (optional, default = "EUR")
+     * @return FlightSearchResponse containing flights for all dates in range
+     */
+    @GetMapping("/flexible")
+    public ResponseEntity<FlightSearchResponse> getFlexibleFlights(
+            @RequestParam String origin,
+            @RequestParam String destination,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam(required = false) Integer maxBudget,
+            @RequestParam(defaultValue = "2") Integer flightType,
+            @RequestParam(defaultValue = "EUR") String currency) {
+
+        FlightSearchResponse response = flightSearchService.getFlexibleFlightOptions(
+                origin, destination, startDate, endDate, maxBudget, flightType, currency
+        );
+
+        return ResponseEntity.ok(response);
+    }
 }
