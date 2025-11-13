@@ -69,8 +69,14 @@ const FlightCard: React.FC<FlightCardProps> = ({ data, onSelect, isFocused = fal
           </p>
           <p>Layovers: {flight.layovers}</p>
           <p>
+            {flight.airplane}
+            </p>
+            <p>
             <strong>
-              {flight.price} {flight.currency}
+              {flight.price === 0
+                ? "Unknown Price"
+                : `${flight.price} ${flight.currency}`
+              }
             </strong>
           </p>
         </div>

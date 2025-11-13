@@ -81,8 +81,14 @@ export default function SearchForm() {
       if (!outboundRes.ok)
         throw new Error(`HTTP error! status: ${outboundRes.status}`);
 
-      const outboundData: FlightSearchResponse = await outboundRes.json();
-      outboundData.flights.sort((a, b) => a.price - b.price);
+      const outboundData: FlightSearchResponse = await outboundRes.json();      
+      outboundData.flights.sort((a, b) => {
+        if (a.price === 0 && b.price === 0) return 0;
+        if (a.price === 0) return 1;
+        if (b.price === 0) return -1;
+        return a.price - b.price;
+      });
+
       setFlightData(outboundData);
 
       if (returnDateStr) {
@@ -98,8 +104,14 @@ export default function SearchForm() {
         if (!returnRes.ok)
           throw new Error(`HTTP error! status: ${returnRes.status}`);
 
-        const returnData: FlightSearchResponse = await returnRes.json();
-        returnData.flights.sort((a, b) => a.price - b.price);
+        const returnData: FlightSearchResponse = await returnRes.json();       
+        returnData.flights.sort((a, b) => {
+        if (a.price === 0 && b.price === 0) return 0;
+        if (a.price === 0) return 1;
+        if (b.price === 0) return -1;
+        return a.price - b.price;
+      });
+
         setReturnFlightData(returnData);
       }
     } catch (err: any) {
