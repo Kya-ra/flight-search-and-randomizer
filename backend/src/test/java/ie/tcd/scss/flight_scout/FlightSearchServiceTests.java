@@ -1,9 +1,10 @@
 package ie.tcd.scss.flight_scout;
 
-import ie.tcd.scss.flight_scout.domain.FlightSearchResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import ie.tcd.scss.flight_scout.model.FlightSearchResponse;
 import ie.tcd.scss.flight_scout.service.FlightSearchService;
 
 
