@@ -1,7 +1,7 @@
 package ie.tcd.scss.flight_scout.controller;
 
 import ie.tcd.scss.flight_scout.model.User;
-import ie.tcd.scss.flight_scout.service.UserService;
+import ie.tcd.scss.flight_scout.service.UserManagementService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
-@CrossOrigin(origins = "*")  
+@CrossOrigin(origins = "*")
 public class UserController {
 
     @Autowired
-    private UserService userService;
+    private UserManagementService userService;
 
     /**
      * Save a new user
