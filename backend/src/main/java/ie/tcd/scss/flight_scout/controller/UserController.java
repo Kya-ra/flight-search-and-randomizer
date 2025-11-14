@@ -21,9 +21,9 @@ public class UserController {
      *
      @param User the User to save
      */
-    @GetMapping("/saveUser")
+    @PostMapping("/saveUser")
     public ResponseEntity<User> saveUser(
-            @RequestParam User newUser
+            @RequestBody User newUser
             ) {
 
         User newUserResponse = userService.saveUser(newUser);
