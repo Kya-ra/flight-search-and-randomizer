@@ -1,6 +1,6 @@
 package ie.tcd.scss.flight_scout.controller;
 
-import ie.tcd.scss.flight_scout.domain.FlightSearchResponse;
+import ie.tcd.scss.flight_scout.model.FlightSearchResponse;
 import ie.tcd.scss.flight_scout.service.FlightSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

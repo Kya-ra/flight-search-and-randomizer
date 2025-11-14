@@ -1,8 +1,7 @@
 package ie.tcd.scss.flight_scout.service;
 
-import ie.tcd.scss.flight_scout.domain.Flight;
-import ie.tcd.scss.flight_scout.domain.FlightSearchResponse;
-import ie.tcd.scss.flight_scout.domain.PriceInsights;
+import ie.tcd.scss.flight_scout.model.*;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
