@@ -31,7 +31,11 @@ frontend | -> Local:        https://localhost:5173
 frontend | -> Network:  <IP ADDRESS HERE>
 
 # Instructions for not using docker (coder users)
-These instructions assume you have the default SCSS coder MySQL database already running. For instructions on setting this up, please refer to the Labsheet.
+These instructions you have a MariaDB/MySQL data base already running, with the following details
+User: scss
+Password: scss
+Port: 3306
+These should be default on the csu33012 coder instance.
 
 # 1. Clone repo
 git clone <https://gitlab.scss.tcd.ie/csu33012-2526-group22/csu33012-2526-project22.git>
@@ -43,9 +47,9 @@ export SERPAPI_API_KEY=your_key_here
 
 Get your key from: https://serpapi.com/manage-api-key
 
-If this command fails, create a copy of .env.example and call it .env
+If this command fails, create a copy of backend/.env.example and call it .env
 Make sure this file is in your .gitignore as you don't want to push an API key
-Put the API key in your .env
+Put the API key in your backend/.env
 
 # 3. Start backend
 
