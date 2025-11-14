@@ -1,4 +1,4 @@
-package ie.tcd.scss.flight_scout.domain;
+package ie.tcd.scss.flight_scout.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

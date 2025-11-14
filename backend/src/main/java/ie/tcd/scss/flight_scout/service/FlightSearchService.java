@@ -1,8 +1,7 @@
 package ie.tcd.scss.flight_scout.service;
 
-import ie.tcd.scss.flight_scout.domain.Flight;
-import ie.tcd.scss.flight_scout.domain.FlightSearchResponse;
-import ie.tcd.scss.flight_scout.domain.PriceInsights;
+import ie.tcd.scss.flight_scout.model.*;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -14,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 @Service
 public class FlightSearchService {
@@ -297,4 +297,80 @@ public class FlightSearchService {
             return null;
         }
     }
+
+    /**
+     * Searches for the cheapest flights within a flexible date range and budget.
+     *
+     * @param origin Airport code (e.g. "DUB")
+     * @param destination Airport code (e.g. "BCN")
+     * @param startDate Start of the date range (YYYY-MM-DD)
+     * @param endDate End of the date range (YYYY-MM-DD)
+     * @param maxBudget Maximum budget in EUR
+     * @param flightType 1=Round-trip, 2=One-way
+     * @param currency Currency code (default: "EUR")
+     * @return Combined list of flights within date range and under budget
+     */
+
+     public FlightSearchResponse getFlexibleFlightOptions(
+        String origin,
+        String destination,
+        String startDate,
+        String endDate,
+        Integer maxBudget,
+        Integer flightType,
+        String currency) {
+
+            List<Flight> allFlights = new ArrayList<>();
+
+            try {
+                // Convert string dates to LocalDate
+                java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+                java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+
+                for (java.time.LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                    String outboundDate = date.toString();
+                    System.out.println("Searching flights for date: " + outboundDate);
+
+                    FlightSearchResponse dailyResponse = searchFlights(
+                            origin,
+                            destination,
+                            outboundDate,
+                            flightType,
+                            null,          
+                            null,          
+                            1,              
+                            0,             
+                            1,             
+                            maxBudget,
+                            currency
+                    );
+
+                    // Collect flights that fit within budget
+                    if (dailyResponse.getFlights() != null) {
+                        allFlights.addAll(dailyResponse.getFlights());
+                    }
+
+            } 
+        } catch (Exception e) {
+        e.printStackTrace();
+        }
+        // Create response with all results
+        FlightSearchResponse flexibleResponse = new FlightSearchResponse();
+        flexibleResponse.setOrigin(origin);
+        flexibleResponse.setDestination(destination);
+        flexibleResponse.setFlights(allFlights);
+        flexibleResponse.setTotalResults(allFlights.size());
+
+        // Calculate cheapest price in results
+        if (!allFlights.isEmpty()) {
+            double cheapest = allFlights.stream()
+                    .mapToDouble(Flight::getPrice)
+                    .min()
+                    .orElse(0.0);
+            flexibleResponse.setCheapestPrice(cheapest);
+        }
+
+        return flexibleResponse;
+    }
+            
 }
