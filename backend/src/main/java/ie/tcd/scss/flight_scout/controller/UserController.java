@@ -5,7 +5,11 @@ import ie.tcd.scss.flight_scout.service.UserManagementService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
@@ -24,10 +28,15 @@ public class UserController {
     @PostMapping("/saveUser")
     public ResponseEntity<User> saveUser(
             @RequestBody User newUser
-            ) {
+    ) {
 
         User newUserResponse = userService.saveUser(newUser);
 
         return ResponseEntity.ok(newUserResponse);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<String> userEndpoint() {
+        return ResponseEntity.ok("Hello user");
     }
 }
