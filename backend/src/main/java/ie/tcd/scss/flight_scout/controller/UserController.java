@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 
 @RestController
-@RequestMapping("/api/user")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     @Autowired
@@ -26,7 +25,7 @@ public class UserController {
      *
      @param User the User to save
      */
-    @PostMapping("/saveUser")
+    @PostMapping("/api/user/saveUser")
     public ResponseEntity<User> saveUser(
             @RequestBody User newUser
     ) {

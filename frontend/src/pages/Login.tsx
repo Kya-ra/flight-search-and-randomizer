@@ -1,21 +1,54 @@
 import { FormEvent, useState } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8080';
+
 const Login = () => {
-  const [email, setEmail] = useState('hello@example.com');
+  const [email, setEmail] = useState('user');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [status, setStatus] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    setStatus('');
 
     if (!email || !password) {
-      setError('Please provide both email and password.');
+      setError('Please provide both username and password.');
       return;
     }
 
-    alert(`Attempting to log in with ${email}`);
-    setPassword('');
+    setIsSubmitting(true);
+    try {
+      const body = new URLSearchParams({
+        username: email,
+        password,
+      });
+
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body,
+      });
+
+      if (response.ok) {
+        setStatus('Login successful! You can now access the user page.');
+      } else if (response.status === 401) {
+        setError('Invalid credentials. Please try again.');
+      } else {
+        setError('Login failed. Please try again later.');
+      }
+    } catch (fetchError) {
+      console.error(fetchError);
+      setError('Unable to reach the server. Check your connection.');
+    } finally {
+      setIsSubmitting(false);
+      setPassword('');
+    }
   };
 
   return (
@@ -42,12 +75,14 @@ const Login = () => {
             placeholder="password"
           />
         </div>
-        <button type="submit">Log in</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Logging in…' : 'Log in'}
+        </button>
         {error && <p>{error}</p>}
+        {status && <p>{status}</p>}
       </form>
     </div>
   );
 };
 
 export default Login;
-
