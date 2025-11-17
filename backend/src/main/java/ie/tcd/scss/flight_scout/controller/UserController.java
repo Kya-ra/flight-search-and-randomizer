@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -38,5 +39,11 @@ public class UserController {
     @GetMapping("/user")
     public ResponseEntity<String> userEndpoint() {
         return ResponseEntity.ok("Hello user");
+    }
+
+    @GetMapping("/allUsers")
+    public ResponseEntity<List<User>> allUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 }
