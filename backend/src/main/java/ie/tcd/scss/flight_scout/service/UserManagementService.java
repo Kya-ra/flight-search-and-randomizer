@@ -5,6 +5,7 @@ import ie.tcd.scss.flight_scout.model.UserPreference;
 import ie.tcd.scss.flight_scout.repository.UserRepository;
 import ie.tcd.scss.flight_scout.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -21,6 +22,7 @@ public class UserManagementService {
 
     private final UserRepository userRepository;
     private final UserPreferenceRepository userPreferenceRepository;
+    private final PasswordEncoder passwordEncoder;
 
 
     /**
@@ -29,6 +31,7 @@ public class UserManagementService {
      * @return the saved User with generated ID
      */
     public User saveUser(User user) {
+        user.setPassword(preparePassword(user.getPassword()));
         return userRepository.save(user);
     }
 
@@ -64,7 +67,7 @@ public class UserManagementService {
 
         existingUser.setName(updatedUser.getName());
         existingUser.setEmail(updatedUser.getEmail());
-        existingUser.setPassword(updatedUser.getPassword());
+        existingUser.setPassword(preparePassword(updatedUser.getPassword()));
         existingUser.setPreference(updatedUser.getPreference());
         existingUser.setSearches(updatedUser.getSearches());
 
@@ -179,5 +182,13 @@ public class UserManagementService {
         existingPreference.setCurrency(updatedPreference.getCurrency());
 
         return userPreferenceRepository.save(existingPreference);
+    }
+
+    private String preparePassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
+        return password.startsWith("$2") ? password : passwordEncoder.encode(password);
     }
 }
