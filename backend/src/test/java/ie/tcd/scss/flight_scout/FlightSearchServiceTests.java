@@ -17,13 +17,13 @@ class FlightSearchServiceTests {
     @Test
     void testFlexibleFlightSearch() {
         FlightSearchResponse response = flightSearchService.getFlexibleFlightOptions(
-                "DUB",         
-                "BCN",        
-                "2025-06-01",  
-                "2025-06-03",   
-                150,            
-                2,              
-                "EUR"           
+                "DUB",
+                "BCN",
+                "2025-06-01",
+                "2025-06-03",
+                150,
+                2,
+                "EUR"
         );
 
         assert(response != null);
