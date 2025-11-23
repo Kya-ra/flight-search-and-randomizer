@@ -1,6 +1,10 @@
 include:
   - template: Security/SAST.gitlab-ci.yml
 
+semgrep-sast:
+  tags:
+    - docker
+
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
