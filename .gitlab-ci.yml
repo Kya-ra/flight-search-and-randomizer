@@ -1,8 +1,6 @@
 include:
   - template: Security/SAST.gitlab-ci.yml
 
-image: maven:3.9.11-eclipse-temurin-21-alpine
-
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
@@ -23,6 +21,7 @@ stages:
 
 build:
   stage: build
+  image: maven:3.9.11-eclipse-temurin-21-alpine
   tags:
     - docker
   script:
@@ -34,6 +33,7 @@ build:
 
 test:
   stage: test
+  image: maven:3.9.11-eclipse-temurin-21-alpine
   tags:
     - docker
   services:
