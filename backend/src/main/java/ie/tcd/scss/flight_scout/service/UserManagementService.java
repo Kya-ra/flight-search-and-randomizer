@@ -55,6 +55,56 @@ public class UserManagementService {
     }
 
     /**
+     * Retrieve a User by their email address.
+     * @param email the User's email
+     * @return Optional containing the User if found, empty otherwise
+     */
+    @Transactional(readOnly = true)
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    /**
+     * Update user profile (name and preferences only, not password or email).
+     * @param id the User ID
+     * @param updatedUser the User object with updated information
+     * @return the updated User
+     * @throws IllegalArgumentException if User doesn't exist
+     */
+    public User updateUserProfile(Long id, User updatedUser) {
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+
+        if (updatedUser.getName() != null) {
+            existingUser.setName(updatedUser.getName());
+        }
+
+        if (updatedUser.getPreference() != null) {
+            UserPreference updatedPreference = updatedUser.getPreference();
+            UserPreference existingPreference = existingUser.getPreference();
+
+            if (existingPreference == null) {
+                updatedPreference.setUser(existingUser);
+                existingUser.setPreference(updatedPreference);
+            } else {
+                if (updatedPreference.getHomeAirport() != null && !updatedPreference.getHomeAirport().isEmpty()) {
+                    existingPreference.setHomeAirport(updatedPreference.getHomeAirport());
+                }
+                existingPreference.setMaxBudget(updatedPreference.getMaxBudget());
+                if (updatedPreference.getCurrency() != null) {
+                    existingPreference.setCurrency(updatedPreference.getCurrency());
+                }
+                if (updatedPreference.getPreferredClimate() != null && !updatedPreference.getPreferredClimate().isEmpty()) {
+                    existingPreference.setPreferredClimate(updatedPreference.getPreferredClimate());
+                }
+                existingPreference.setTripLength(updatedPreference.getTripLength());
+            }
+        }
+
+        return userRepository.save(existingUser);
+    }
+
+    /**
      * Update an existing User with new information.
      * @param id the ID of the User to update
      * @param updatedUser the User object containing updated information
