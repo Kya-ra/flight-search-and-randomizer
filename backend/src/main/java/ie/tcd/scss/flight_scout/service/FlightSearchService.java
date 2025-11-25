@@ -372,5 +372,33 @@ public class FlightSearchService {
 
         return flexibleResponse;
     }
+
+    /**
+     * Returns a completely random flight from all flights in the flexible date range.
+     */
+    public Flight getRandomFlight(
+            String origin,
+            String destination,
+            String startDate,
+            String endDate,
+            Integer maxBudget,
+            Integer flightType,
+            String currency
+    ) {
+
+        FlightSearchResponse response = getFlexibleFlightOptions(
+                origin, destination, startDate, endDate, maxBudget, flightType, currency
+        );
+
+        List<Flight> flights = response.getFlights();
+
+        if (flights == null || flights.isEmpty()) {
+            return null; // no flights found
+        }
+
+        // Pick one flight completely at random
+        int randomIndex = new java.util.Random().nextInt(flights.size());
+        return flights.get(randomIndex);
+    }
             
 }
