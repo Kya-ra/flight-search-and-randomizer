@@ -45,11 +45,30 @@ export default function SearchForm() {
   const [selectedReturn, setSelectedReturn] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [outboundMin, setOutboundMin] = useState(0);
+  const [outboundMax, setOutboundMax] = useState(0);
+  const [returnMin, setReturnMin] = useState(0);
+  const [returnMax, setReturnMax] = useState(0);
+
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
+
+  function buildFlexDates(base: Date | null, min: number, max: number): string[] {
+    if (!base) return [];
+    const dates: string[] = [];
+
+    for (let diff = min; diff <= max; diff++) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + diff);
+      dates.push(d.toISOString().split("T")[0]);
+    }
+
+    return dates;
+  }
+
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -61,66 +80,72 @@ export default function SearchForm() {
     setLoading(true);
 
     try {
-      const outboundDateStr = form.outbound
-        ? form.outbound.toISOString().split("T")[0]
-        : "";
-      const returnDateStr = form.return
-        ? form.return.toISOString().split("T")[0]
-        : undefined;
+      const outboundDates = buildFlexDates(form.outbound, outboundMin, outboundMax);
+      const returnDates = form.return
+        ? buildFlexDates(form.return, returnMin, returnMax)
+        : [];
 
-      const outboundParams = new URLSearchParams({
-        origin: form.origin,
-        destination: form.destination,
-        outboundDate: outboundDateStr,
-        flight_type: "2",
-      });
+      const outboundResponses = await Promise.all(
+        outboundDates.map((date) => {
+          const params = new URLSearchParams({
+            origin: form.origin,
+            destination: form.destination,
+            outboundDate: date,
+            flight_type: "2",
+          });
 
-      const outboundRes = await fetch(
-        `http://localhost:8080/api/flights/search?${outboundParams.toString()}`
+          return fetch(`http://localhost:8080/api/flights/search?${params}`);
+        })
       );
-      if (!outboundRes.ok)
-        throw new Error(`HTTP error! status: ${outboundRes.status}`);
 
-      const outboundData: FlightSearchResponse = await outboundRes.json();      
-      outboundData.flights.sort((a, b) => {
-        if (a.price === 0 && b.price === 0) return 0;
-        if (a.price === 0) return 1;
-        if (b.price === 0) return -1;
-        return a.price - b.price;
-      });
+      const outboundJsons: FlightSearchResponse[] =
+        await Promise.all(outboundResponses.map((r) => r.json()));
 
-      setFlightData(outboundData);
+      const mergedOutbound: FlightSearchResponse = {
+        ...outboundJsons[0],
+        flights: outboundJsons.flatMap((d) => d.flights),
+        totalResults: outboundJsons.reduce((a, b) => a + b.totalResults, 0),
+        cheapestPrice: Math.min(...outboundJsons.map((d) => d.cheapestPrice)),
+      };
 
-      if (returnDateStr) {
-        const returnParams = new URLSearchParams({
-          origin: form.destination,
-          destination: form.origin,
-          outboundDate: returnDateStr,
-          flight_type: "2",
-        });
-        const returnRes = await fetch(
-          `http://localhost:8080/api/flights/search?${returnParams.toString()}`
+      mergedOutbound.flights.sort((a, b) => a.price - b.price);
+      setFlightData(mergedOutbound);
+
+      if (returnDates.length > 0) {
+        const returnResponses = await Promise.all(
+          returnDates.map((date) => {
+            const params = new URLSearchParams({
+              origin: form.destination,
+              destination: form.origin,
+              outboundDate: date,
+              flight_type: "2",
+            });
+
+            return fetch(`http://localhost:8080/api/flights/search?${params}`);
+          })
         );
-        if (!returnRes.ok)
-          throw new Error(`HTTP error! status: ${returnRes.status}`);
 
-        const returnData: FlightSearchResponse = await returnRes.json();       
-        returnData.flights.sort((a, b) => {
-        if (a.price === 0 && b.price === 0) return 0;
-        if (a.price === 0) return 1;
-        if (b.price === 0) return -1;
-        return a.price - b.price;
-      });
+        const returnJsons: FlightSearchResponse[] =
+          await Promise.all(returnResponses.map((r) => r.json()));
 
-        setReturnFlightData(returnData);
+        const mergedReturn: FlightSearchResponse = {
+          ...returnJsons[0],
+          flights: returnJsons.flatMap((d) => d.flights),
+          totalResults: returnJsons.reduce((a, b) => a + b.totalResults, 0),
+          cheapestPrice: Math.min(...returnJsons.map((d) => d.cheapestPrice)),
+        };
+
+        mergedReturn.flights.sort((a, b) => a.price - b.price);
+        setReturnFlightData(mergedReturn);
       }
     } catch (err: any) {
-      console.error("Error fetching flights:", err);
-      setError(err.message || "Error fetching flights");
+      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
+
 
   const outboundPrice = selectedOutbound?.price ?? flightData?.flights?.[0]?.price ?? 0;
   const returnPrice = selectedReturn?.price ?? returnFlightData?.flights?.[0]?.price ?? 0;
@@ -169,7 +194,80 @@ export default function SearchForm() {
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
         </button>
+        <button type="button" onClick={() => window.location.reload()} className="bg-blue-600 text-white py-2 rounded">
+          Reset
+        </button>
       </form>
+
+   <div className="flex flex-col gap-2">
+    <span className="font-semibold">{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}Outbound Flex{"\u2003"}Return Flex</span>
+
+    <div className="flex items-center gap-2">
+      <span>Days Before:{"\u2003"}</span>
+      <button
+        type="button"
+        disabled={outboundMin <= -2}
+        onClick={() => setOutboundMin(outboundMin - 1)}
+        className="px-2 bg-gray-200 rounded"
+      >-</button>
+      <span>{outboundMin}</span>
+      <button
+        type="button"
+        disabled={outboundMin >= 0}
+        onClick={() => setOutboundMin(outboundMin + 1)}
+        className="px-2 bg-gray-200 rounded"
+      >+</button>
+      <span>&nbsp;</span>
+      <button
+        type="button"
+        disabled={returnMin <= -2}
+        onClick={() => setReturnMin(returnMin - 1)}
+        className="px-2 bg-gray-200 rounded"
+      >-</button>
+      <span>{returnMin}</span>
+      <button
+        type="button"
+        disabled={returnMin >= 0}
+        onClick={() => setReturnMin(returnMin + 1)}
+        className="px-2 bg-gray-200 rounded"
+      >+</button>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <span>Days After:{"\u2003"}{"\u2003"}</span>
+      <button
+        type="button"
+        disabled={outboundMax <= 0}
+        onClick={() => setOutboundMax(outboundMax - 1)}
+        className="px-2 bg-gray-200 rounded"
+      >-</button>
+      <span>{outboundMax}</span>
+      <button
+        type="button"
+        disabled={outboundMax >= 2}
+        onClick={() => setOutboundMax(outboundMax + 1)}
+        className="px-2   bg-gray-200 rounded"
+      >+</button>
+      <span>&nbsp;</span>
+      <button
+        type="button"
+        disabled={returnMax <= 0}
+        onClick={() => setReturnMax(returnMax - 1)}
+        className="px-2 bg-gray-200 rounded"
+      >-</button>
+      <span>{returnMax}</span>
+      <button
+        type="button"
+        disabled={returnMax >= 2}
+        onClick={() => setReturnMax(returnMax + 1)}
+        className="px-2 bg-gray-200 rounded"
+      >+</button>
+    </div>
+  </div>
+
+
+
+
 
       {}
       {loading && <p className="mt-4 text-gray-600">Loading flights…</p>}

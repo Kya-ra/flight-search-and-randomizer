@@ -52,6 +52,13 @@ const FlightCard: React.FC<FlightCardProps> = ({ data, onSelect, isFocused = fal
               ? `+ ${flight.layovers} more`
               : ""}
           </h3>
+            <p className="flight-date">
+              {new Date(flight.departureTime).toLocaleDateString([], {
+                weekday: "short",
+                day: "2-digit",
+                month: "short"
+              })}
+            </p>
           <p>
             {new Date(flight.departureTime).toLocaleTimeString([], {
               hour: "2-digit",
