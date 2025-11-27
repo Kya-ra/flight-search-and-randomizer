@@ -45,6 +45,7 @@ export default function SearchForm() {
   const [selectedReturn, setSelectedReturn] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [randomFlight, setRandomFlight] = useState<Flight | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -133,6 +134,33 @@ export default function SearchForm() {
 
   const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
+  const fetchRandomFlight = async () => {
+  if (!form.origin || !form.destination || !form.outbound) {
+    setError("Please fill in origin, destination, and outbound date first.");
+    return;
+  }
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    const startDate = form.outbound.toISOString().split("T")[0];
+    const endDate = form.return ? form.return.toISOString().split("T")[0] : startDate;
+
+    const res = await fetch(
+      `http://localhost:8080/api/flights/random?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`
+    );
+
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data: Flight = await res.json();
+    setRandomFlight(data);
+  } catch (err: any) {
+    setError(err.message || "Error fetching random flight");
+  } finally {
+    setLoading(false);
+  }
+};
+
   return (
     <div className="p-6">
       {}
@@ -169,11 +197,36 @@ export default function SearchForm() {
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
         </button>
+        <button
+          type="button"
+          className="bg-green-600 text-white py-2 rounded mt-2"
+          onClick={fetchRandomFlight} >
+          Get Random Flight
+        </button>
       </form>
 
       {}
       {loading && <p className="mt-4 text-gray-600">Loading flights…</p>}
       {error && <p className="mt-4 text-red-500">{error}</p>}
+
+      {randomFlight && (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4">Random flight suggestion</h2>
+          <FlightCard
+            data={{
+              origin: randomFlight.origin,
+              destination: randomFlight.destination,
+              outboundDate: randomFlight.departureTime.split(" ")[0], // just the date
+              returnDate: "",
+              totalResults: 1,
+              cheapestPrice: randomFlight.price,
+              flights: [randomFlight],
+            }}
+            onSelect={() => {}}
+            isFocused={true}
+          />
+        </div>
+      )}
 
       {}
       {flightData && (
