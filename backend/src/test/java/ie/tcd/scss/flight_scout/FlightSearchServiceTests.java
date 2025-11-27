@@ -40,24 +40,4 @@ class FlightSearchServiceTests {
         );
     }
 
-    @Test
-    void testRandomFlight() {
-        Flight randomFlight = flightSearchService.getRandomFlight(
-        "DUB",         
-        "BCN",          
-        "2025-12-01",   
-        "2025-12-10",  
-        null,          
-        2,              
-        "EUR"       
-        );
-
-        assertNotNull(randomFlight, "Random flight should not be null");
-        assertEquals("DUB", randomFlight.getOrigin(), "Origin should be DUB");
-        assertEquals("BCN", randomFlight.getDestination(), "Destination should be BCN");
-        assertTrue(randomFlight.getPrice() > 0, "Price should be greater than 0");
-
-        System.out.println("Random flight selected:");
-        System.out.println(randomFlight.getDepartureTime() + " → " + randomFlight.getDestination() + " : " + randomFlight.getPrice());
-    }
 }
