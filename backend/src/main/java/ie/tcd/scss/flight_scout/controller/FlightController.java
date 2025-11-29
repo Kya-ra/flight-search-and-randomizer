@@ -105,21 +105,11 @@ public class FlightController {
      * Returns a completely random flight from a flexible date range.
      */
     @GetMapping("/random")
-    public ResponseEntity<?> getRandomFlight(
-            @RequestParam String origin,
-            @RequestParam String destination,
-            @RequestParam String startDate,
-            @RequestParam String endDate,
-            @RequestParam(required = false) Integer maxBudget,
-            @RequestParam(defaultValue = "2") Integer flightType,
-            @RequestParam(defaultValue = "EUR") String currency
-    ) {
-        Flight randomFlight = flightSearchService.getRandomFlight(
-                origin, destination, startDate, endDate, maxBudget, flightType, currency
-        );
+    public ResponseEntity<?> getRandomFlight() {
+        Flight randomFlight = flightSearchService.getRandomFlight(); // no arguments
 
         if (randomFlight == null) {
-            return ResponseEntity.ok("No flights found in this date range");
+            return ResponseEntity.ok("No flights found");
         }
 
         return ResponseEntity.ok(randomFlight);

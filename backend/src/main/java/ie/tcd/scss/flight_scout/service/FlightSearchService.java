@@ -396,8 +396,7 @@ public class FlightSearchService {
         Integer maxBudget = null;
 
         // Flight type: 1 = one-way, 2 = roundtrip
-        // Integer flightType = rand.nextBoolean() ? 1 : 2;
-        Integer flightType = 2;
+        Integer flightType = 1;
 
         String currency = "EUR";
 
