@@ -106,7 +106,7 @@ public class FlightController {
      */
     @GetMapping("/random")
     public ResponseEntity<?> getRandomFlight() {
-        Flight randomFlight = flightSearchService.getRandomFlight(); // no arguments
+        Flight randomFlight = flightSearchService.getRandomFlight(); 
 
         if (randomFlight == null) {
             return ResponseEntity.ok("No flights found");

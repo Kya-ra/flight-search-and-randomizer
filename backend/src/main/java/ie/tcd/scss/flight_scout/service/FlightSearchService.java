@@ -395,9 +395,7 @@ public class FlightSearchService {
         String endDate = end.toString();
         Integer maxBudget = null;
 
-        // Flight type: 1 = one-way, 2 = roundtrip
         Integer flightType = 1;
-
         String currency = "EUR";
 
         // Get all flexible flight options
