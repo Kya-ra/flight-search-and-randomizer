@@ -213,22 +213,26 @@ export default function SearchForm() {
       {loading && <p className="mt-4 text-gray-600">Loading flights…</p>}
       {error && <p className="mt-4 text-red-500">{error}</p>}
 
-      {randomFlight && (
+      {randomFlight !== null && (
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-4">Random flight suggestion</h2>
-          <FlightCard
-            data={{
-              origin: randomFlight.origin,
-              destination: randomFlight.destination,
-              outboundDate: randomFlight.departureTime.split(" ")[0], // just the date
-              returnDate: "",
-              totalResults: 1,
-              cheapestPrice: randomFlight.price,
-              flights: [randomFlight],
-            }}
-            onSelect={() => {}}
-            isFocused={true}
-          />
+          {randomFlight ? (
+            <FlightCard
+              data={{
+                origin: randomFlight.origin,
+                destination: randomFlight.destination,
+                outboundDate: randomFlight?.departureTime?.split(" ")[0] ?? "",
+                returnDate: "",
+                totalResults: 1,
+                cheapestPrice: randomFlight.price,
+                flights: [randomFlight],
+              }}
+              onSelect={() => {}}
+              isFocused={true}
+            />
+          ) : (
+            <p className="mt-4 text-gray-600">No random flights found for your criteria.</p>
+          )}
         </div>
       )}
 

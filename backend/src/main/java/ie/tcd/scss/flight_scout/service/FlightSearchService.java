@@ -396,7 +396,7 @@ public class FlightSearchService {
         System.out.println("Date range: " + startDate + " → " + endDate);
         Integer maxBudget = null;
 
-        Integer flightType = 1;
+        Integer flightType = 2;
         String currency = "EUR";
 
         // Get all flexible flight options
