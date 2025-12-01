@@ -372,5 +372,46 @@ public class FlightSearchService {
 
         return flexibleResponse;
     }
+
+    /**
+    * Returns a completely random flight from all flights in the flexible date range.
+    */
+    public Flight getRandomFlight() {
+        // Define some example origins and destinations
+        String[] airports = {"DUB", "BCN", "LHR", "CDG", "AMS", "FRA", "MAD"};
+        java.util.Random rand = new java.util.Random();
+
+        // Pick random origin and destination
+        String origin = airports[rand.nextInt(airports.length)];
+        String destination;
+        do {
+            destination = airports[rand.nextInt(airports.length)];
+        } while (destination.equals(origin));
+
+        // Pick random dates 
+        java.time.LocalDate start = java.time.LocalDate.now().plusDays(rand.nextInt(30));
+        java.time.LocalDate end = start.plusDays(rand.nextInt(10) + 1); // flight duration 1–10 days
+        String startDate = start.toString();
+        String endDate = end.toString();
+        System.out.println("Date range: " + startDate + " → " + endDate);
+        Integer maxBudget = null;
+
+        Integer flightType = 2;
+        String currency = "EUR";
+
+        // Get all flexible flight options
+        FlightSearchResponse response = getFlexibleFlightOptions(
+                origin, destination, startDate, endDate, maxBudget, flightType, currency
+        );
+
+        List<Flight> flights = response.getFlights();
+        if (flights == null || flights.isEmpty()) {
+            return null;
+        }
+
+        // Pick one completely at random
+        int randomIndex = rand.nextInt(flights.size());
+        return flights.get(randomIndex);
+    }
             
 }

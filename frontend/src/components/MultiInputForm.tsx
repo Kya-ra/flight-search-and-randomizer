@@ -45,6 +45,7 @@ export default function SearchForm() {
   const [selectedReturn, setSelectedReturn] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [randomFlight, setRandomFlight] = useState<Flight | null>(null);
   const [outboundMin, setOutboundMin] = useState(0);
   const [outboundMax, setOutboundMax] = useState(0);
   const [returnMin, setReturnMin] = useState(0);
@@ -77,6 +78,7 @@ export default function SearchForm() {
     setReturnFlightData(null);
     setSelectedOutbound(null);
     setSelectedReturn(null);
+    setRandomFlight(null);
     setLoading(true);
 
     try {
@@ -158,6 +160,36 @@ export default function SearchForm() {
 
   const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
+  const fetchRandomFlight = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let url = "http://localhost:8080/api/flights/random";
+
+      if (form.outbound) {
+        const startDate = form.outbound.toISOString().split("T")[0];
+        const endDate = form.return
+          ? form.return.toISOString().split("T")[0]
+          : startDate;
+
+        url += `?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`;
+      }
+
+      const res = await fetch(url);
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const data: Flight = await res.json();
+      setRandomFlight(data);
+
+    } catch (err: any) {
+      setError(err.message || "Error fetching random flight");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       {}
@@ -193,6 +225,12 @@ export default function SearchForm() {
         />
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
+        </button>
+        <button
+          type="button"
+          className="bg-green-600 text-white py-2 rounded mt-2"
+          onClick={fetchRandomFlight} >
+          Get Random Flight
         </button>
         <button type="button" onClick={() => window.location.reload()} className="bg-blue-600 text-white py-2 rounded">
           Reset
@@ -272,6 +310,29 @@ export default function SearchForm() {
       {}
       {loading && <p className="mt-4 text-gray-600">Loading flights…</p>}
       {error && <p className="mt-4 text-red-500">{error}</p>}
+
+      {randomFlight !== null && (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4">Random flight suggestion</h2>
+          {randomFlight ? (
+            <FlightCard
+              data={{
+                origin: randomFlight.origin,
+                destination: randomFlight.destination,
+                outboundDate: randomFlight?.departureTime?.split(" ")[0] ?? "",
+                returnDate: "",
+                totalResults: 1,
+                cheapestPrice: randomFlight.price,
+                flights: [randomFlight],
+              }}
+              onSelect={() => {}}
+              isFocused={true}
+            />
+          ) : (
+            <p className="mt-4 text-gray-600">No random flights found for your criteria.</p>
+          )}
+        </div>
+      )}
 
       {}
       {flightData && (

@@ -1,12 +1,13 @@
 package ie.tcd.scss.flight_scout.controller;
 
+import ie.tcd.scss.flight_scout.model.Flight;
 import ie.tcd.scss.flight_scout.model.FlightSearchResponse;
 import ie.tcd.scss.flight_scout.service.FlightSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
+
 
 
 
@@ -101,4 +102,20 @@ public class FlightController {
 
         return ResponseEntity.ok(response);
     }
+
+     /**
+     * Returns a completely random flight from a flexible date range.
+     */
+    @GetMapping("/random")
+    public ResponseEntity<?> getRandomFlight() {
+        System.out.println("Random flight endpoint hit");
+        Flight randomFlight = flightSearchService.getRandomFlight(); 
+
+        if (randomFlight == null) {
+            return ResponseEntity.ok(Map.of("message", "No flights found"));
+        }
+
+        return ResponseEntity.ok(randomFlight);
+    }
+    
 }

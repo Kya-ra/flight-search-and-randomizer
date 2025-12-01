@@ -1,9 +1,14 @@
 package ie.tcd.scss.flight_scout;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import ie.tcd.scss.flight_scout.model.Flight;
 import ie.tcd.scss.flight_scout.model.FlightSearchResponse;
 import ie.tcd.scss.flight_scout.service.FlightSearchService;
 
@@ -34,4 +39,5 @@ class FlightSearchServiceTests {
             System.out.println(f.getDepartureTime() + " → " + f.getDestination() + " : " + f.getPrice())
         );
     }
+
 }
