@@ -37,3 +37,10 @@ Throughout the week, we tested these features extensively. While some integratio
 
 By the end of the week, the user system was largely functional, and the frontend was more cohesive with the backend, setting us up for feature refinement in the coming weeks.
 
+## Week 6 (24/11/2025)
+
+This week, the team focused on improving the user system and adding new frontend features. Conor polished the sign-in and sign-up buttons on the home page, enabling user creation from the frontend. The user dashboard was enhanced to display all user details and provide functionality to edit and delete profiles.
+
+Kyara implemented flight flexibility features on the frontend, allowing the app to aggregate results over a range of dates and display them in a more user-friendly manner. Theresa began work on the random flight suggester, adding the initial frontend and backend components.
+
+Team coordination remained important this week, with discussions on meeting times, feature priorities, and the upcoming code submission deadlines. The focus was on ensuring all features were integrated smoothly and ready for final testing in the following week.
