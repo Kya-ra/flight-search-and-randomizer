@@ -25,3 +25,15 @@ Kyara made the call that since we already have our database running on Docker, w
 Secondly, with MVP due this Friday we needed to clean up the project a bit. We consolidated models into one folder, combined some related services to reduce the number of service classes and updated the Readme to have some instructions on running the project on coder. 
 
 With this spring-cleaning done, we can now focus on adding additional functionality as we head into the final weeks of the project.
+
+
+## Week 5 (17/11/2025)
+
+This week was focused on improving the user system and integrating it more fully into the frontend. Building on the backend work from the previous week, we added functionality for users to sign up and log in directly from the homepage. Kyara polished the frontend so that users could see their dashboard after logging in, displaying all their details and preferences.
+
+We also implemented functionality for users to edit their information and delete their profile if needed. This gave us valuable experience in connecting frontend forms with backend endpoints, handling state updates, and managing asynchronous requests in React.
+
+Throughout the week, we tested these features extensively. While some integration bugs occurred—such as error 500s due to frontend-backend communication—these were identified and fixed. GitLab pipelines and SAST checks were also run to ensure that our code remained secure and maintainable.
+
+By the end of the week, the user system was largely functional, and the frontend was more cohesive with the backend, setting us up for feature refinement in the coming weeks.
+
