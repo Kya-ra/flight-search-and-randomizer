@@ -135,35 +135,35 @@ export default function SearchForm() {
 
   const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
-const fetchRandomFlight = async () => {
-  setLoading(true);
-  setError(null);
+  const fetchRandomFlight = async () => {
+    setLoading(true);
+    setError(null);
 
-  try {
-    let url = "http://localhost:8080/api/flights/random";
+    try {
+      let url = "http://localhost:8080/api/flights/random";
 
-    if (form.outbound) {
-      const startDate = form.outbound.toISOString().split("T")[0];
-      const endDate = form.return
-        ? form.return.toISOString().split("T")[0]
-        : startDate;
+      if (form.outbound) {
+        const startDate = form.outbound.toISOString().split("T")[0];
+        const endDate = form.return
+          ? form.return.toISOString().split("T")[0]
+          : startDate;
 
-      url += `?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`;
+        url += `?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`;
+      }
+
+      const res = await fetch(url);
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const data: Flight = await res.json();
+      setRandomFlight(data);
+
+    } catch (err: any) {
+      setError(err.message || "Error fetching random flight");
+    } finally {
+      setLoading(false);
     }
-
-    const res = await fetch(url);
-
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-    const data: Flight = await res.json();
-    setRandomFlight(data);
-
-  } catch (err: any) {
-    setError(err.message || "Error fetching random flight");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="p-6">

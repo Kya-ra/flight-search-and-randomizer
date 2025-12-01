@@ -393,6 +393,7 @@ public class FlightSearchService {
         java.time.LocalDate end = start.plusDays(rand.nextInt(10) + 1); // flight duration 1–10 days
         String startDate = start.toString();
         String endDate = end.toString();
+        System.out.println("Date range: " + startDate + " → " + endDate);
         Integer maxBudget = null;
 
         Integer flightType = 1;

@@ -6,6 +6,8 @@ import ie.tcd.scss.flight_scout.service.FlightSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+
 
 
 
@@ -106,10 +108,11 @@ public class FlightController {
      */
     @GetMapping("/random")
     public ResponseEntity<?> getRandomFlight() {
+        System.out.println("Random flight endpoint hit");
         Flight randomFlight = flightSearchService.getRandomFlight(); 
 
         if (randomFlight == null) {
-            return ResponseEntity.ok("No flights found");
+            return ResponseEntity.ok(Map.of("message", "No flights found"));
         }
 
         return ResponseEntity.ok(randomFlight);
