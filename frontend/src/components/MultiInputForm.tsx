@@ -110,7 +110,14 @@ export default function SearchForm() {
         cheapestPrice: Math.min(...outboundJsons.map((d) => d.cheapestPrice)),
       };
 
-      mergedOutbound.flights.sort((a, b) => a.price - b.price);
+      mergedOutbound.flights.sort((a, b) => {
+          if (a.layovers !== b.layovers) {
+            return a.layovers - b.layovers;
+          }
+          if (a.price === 0 && b.price === 0) return 0;
+          if (a.price === 0) return 1;
+          if (b.price === 0) return -1;
+          return a.price - b.price;  });
       setFlightData(mergedOutbound);
 
       if (returnDates.length > 0) {
@@ -137,7 +144,14 @@ export default function SearchForm() {
           cheapestPrice: Math.min(...returnJsons.map((d) => d.cheapestPrice)),
         };
 
-        mergedReturn.flights.sort((a, b) => a.price - b.price);
+        mergedReturn.flights.sort((a, b) => {
+          if (a.layovers !== b.layovers) {
+            return a.layovers - b.layovers;
+          }
+          if (a.price === 0 && b.price === 0) return 0;
+          if (a.price === 0) return 1;
+          if (b.price === 0) return -1;
+          return a.price - b.price;  });
         setReturnFlightData(mergedReturn);
       }
     } catch (err: any) {

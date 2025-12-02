@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
 
 @Service
 public class FlightSearchService {
@@ -377,7 +376,7 @@ public class FlightSearchService {
     * Returns a completely random flight from all flights in the flexible date range.
     */
     public Flight getRandomFlight(String origin, String dateString, int minusFlex, int plusFlex) {
-        // Define some example origins and destinations
+        // List of airports with direct flights from an airport in Ireland
         String[] airports = {"ABZ","ALC","AMS","ATH","BCN","BER","BIO","BHX","BOD","BRS","BRU","BUD","CFN","DBV","DUS","EDI","EXT","FAO","FRA",
                             "GVA","GLA","LPA","HAM","IOM","ADB","ACE","LBA","LIS","LPL","LHR","LYS","MAD","AGP","MLA","MAN","RAK","LIN","MUC",
                             "NCL","NCE","PMI","CDG","PRG","FCO","SOU","TFS","VRN","VIE","ZRH","BES","BDS","BOJ","CTA","CFU","DLM","FUE","HER",
@@ -387,16 +386,16 @@ public class FlightSearchService {
                             "LGW","LTN","STN","LDE","LUZ","FMM","PFO","OPO","POZ","RBA","RZE","SDR","SOF","TLL","TIA","VNO","VLC","WMI","WRO",
                             "ZAG","AHO","BRI","BIQ","BZG","CAG","CCF","CHQ","GRQ","GNB","IBZ","KSC","LRH","MAH","RMU","FNI","OLB","PLQ","PMO",
                             "REU","RHO","RDZ","RVN","SZG","SZZ","SKG","TRS","ZAD","ZTH","CIA","BZR","BVE","CFR","PUF","NBE","HRG","LCA","PDV",
-                            "INV","KOI","LSI"};
+                            "INV","KOI","LSI", "DUB", "KIR", "ORK", "SNN", "NOC", "CFN","LDY", "BFS", "BHD"};
         java.util.Random rand = new java.util.Random();
 
-        // Pick random origin and destination
+        // Pick random destination 
         String destination;
         do {
             destination = airports[rand.nextInt(airports.length)];
         } while (destination.equals(origin));
 
-        // Pick random dates
+        // Create flexible dates backend-style
         java.time.LocalDate date = java.time.LocalDate.parse(dateString); 
         java.time.LocalDate start = date.minusDays(minusFlex);
         java.time.LocalDate end = date.plusDays(plusFlex);
@@ -408,11 +407,12 @@ public class FlightSearchService {
         Integer flightType = 2;
         String currency = "EUR";
 
+        //Search for first flight
         FlightSearchResponse response = getFlexibleFlightOptions(
                 origin, destination, startDate, endDate, maxBudget, flightType, currency
         );
         List<Flight> flights = response.getFlights();
-
+        //Make sure we actually have results to show
         while(flights == null || flights.isEmpty()) {
             do {
                 destination = airports[rand.nextInt(airports.length)];
@@ -425,9 +425,22 @@ public class FlightSearchService {
 
         }
 
-        // Return the cheapest flight
-        flights.sort((a, b) -> Double.compare(a.price, b.price));
+        // Return the cheapest flight with the fewest layovers
+        flights.sort((a, b) -> {
+
+            if (a.getLayovers() != b.getLayovers()) {
+                return Integer.compare(a.getLayovers(), b.getLayovers());
+            }
+
+            double priceA = a.getPrice();
+            double priceB = b.getPrice();
+
+            if (priceA == 0 && priceB == 0) return 0;
+            if (priceA == 0) return 1;
+            if (priceB == 0) return -1;
+
+            return Double.compare(priceA, priceB);
+        });
         return flights.get(0);
-    }
-            
+    }            
 }
