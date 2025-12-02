@@ -51,6 +51,18 @@ export default function SearchForm() {
   const [returnMin, setReturnMin] = useState(0);
   const [returnMax, setReturnMax] = useState(0);
 
+  const today = new Date();
+  const sixtyDaysFromToday = new Date();
+  const oneYearFromToday = new Date();
+  sixtyDaysFromToday.setDate(today.getDate() + 60);
+  oneYearFromToday.setDate(today.getDate() + 366);
+
+  const getRandomDate = () => {
+    const minTime = today.getTime();
+    const maxTime = sixtyDaysFromToday.getTime();
+    const randomTime = minTime + Math.random() * (maxTime - minTime);
+    return new Date(randomTime);
+  };
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -184,8 +196,7 @@ export default function SearchForm() {
         return;
       }
       if(!form.outbound) {
-        setError("Please enter an outbound date");
-        return;
+        form.outbound = getRandomDate();
       }
 
       let url = `http://localhost:8080/api/flights/random?origin=${form.origin}&date=${form.outbound.toISOString().split("T")[0]}&minusFlex=${outboundMin}&plusFlex=${outboundMax}`;
@@ -230,6 +241,8 @@ export default function SearchForm() {
           placeholderText="Outbound"
           dateFormat="dd/MM/yyyy"
           locale="en-IE"
+          minDate={today}
+          maxDate={oneYearFromToday}
           required
         />
         <DatePicker
@@ -238,6 +251,8 @@ export default function SearchForm() {
           placeholderText="Return"
           dateFormat="dd/MM/yyyy"
           locale="en-IE"
+          minDate={form.outbound}
+          maxDate={oneYearFromToday}
         />
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
@@ -252,7 +267,6 @@ export default function SearchForm() {
           Reset
         </button>
       </form>
-
    <div className="flex flex-col gap-2">
     <span className="font-semibold">{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}Outbound Flex{"\u2003"}Return Flex</span>
 
