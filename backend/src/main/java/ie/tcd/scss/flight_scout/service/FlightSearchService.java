@@ -376,21 +376,30 @@ public class FlightSearchService {
     /**
     * Returns a completely random flight from all flights in the flexible date range.
     */
-    public Flight getRandomFlight() {
+    public Flight getRandomFlight(String origin, String dateString, int minusFlex, int plusFlex) {
         // Define some example origins and destinations
-        String[] airports = {"DUB", "BCN", "LHR", "CDG", "AMS", "FRA", "MAD"};
+        String[] airports = {"ABZ","ALC","AMS","ATH","BCN","BER","BIO","BHX","BOD","BRS","BRU","BUD","CFN","DBV","DUS","EDI","EXT","FAO","FRA",
+                            "GVA","GLA","LPA","HAM","IOM","ADB","ACE","LBA","LIS","LPL","LHR","LYS","MAD","AGP","MLA","MAN","RAK","LIN","MUC",
+                            "NCL","NCE","PMI","CDG","PRG","FCO","SOU","TFS","VRN","VIE","ZRH","BES","BDS","BOJ","CTA","CFU","DLM","FUE","HER",
+                            "JER","KOS","MRS","MXP","NTE","NAP","NQY","OLD","PGF","PSA","RNS","SCQ","JTR","SVQ","SPU","TLS","TOS","TRN","VCE",
+                            "WAW","RIX","GCI","BCM","OTP","CAI","STR","KIV","HEL","CLJ","IAS","KEF","LUX","OSL","CPH","SAW","ARN","AYT","ORY",
+                            "BGO","AGA","BSL","BVA","BGY","BJV","BLQ","CWL","CRL","CGN","EMA","FNC","GDN","HHN","KTW","KUN","KIR","KRK","LCJ",
+                            "LGW","LTN","STN","LDE","LUZ","FMM","PFO","OPO","POZ","RBA","RZE","SDR","SOF","TLL","TIA","VNO","VLC","WMI","WRO",
+                            "ZAG","AHO","BRI","BIQ","BZG","CAG","CCF","CHQ","GRQ","GNB","IBZ","KSC","LRH","MAH","RMU","FNI","OLB","PLQ","PMO",
+                            "REU","RHO","RDZ","RVN","SZG","SZZ","SKG","TRS","ZAD","ZTH","CIA","BZR","BVE","CFR","PUF","NBE","HRG","LCA","PDV",
+                            "INV","KOI","LSI"};
         java.util.Random rand = new java.util.Random();
 
         // Pick random origin and destination
-        String origin = airports[rand.nextInt(airports.length)];
         String destination;
         do {
             destination = airports[rand.nextInt(airports.length)];
         } while (destination.equals(origin));
 
-        // Pick random dates 
-        java.time.LocalDate start = java.time.LocalDate.now().plusDays(rand.nextInt(30));
-        java.time.LocalDate end = start.plusDays(rand.nextInt(10) + 1); // flight duration 1–10 days
+        // Pick random dates
+        java.time.LocalDate date = java.time.LocalDate.parse(dateString); 
+        java.time.LocalDate start = date.minusDays(minusFlex);
+        java.time.LocalDate end = date.plusDays(plusFlex);
         String startDate = start.toString();
         String endDate = end.toString();
         System.out.println("Date range: " + startDate + " → " + endDate);
@@ -399,19 +408,26 @@ public class FlightSearchService {
         Integer flightType = 2;
         String currency = "EUR";
 
-        // Get all flexible flight options
         FlightSearchResponse response = getFlexibleFlightOptions(
                 origin, destination, startDate, endDate, maxBudget, flightType, currency
         );
-
         List<Flight> flights = response.getFlights();
-        if (flights == null || flights.isEmpty()) {
-            return null;
+
+        while(flights == null || flights.isEmpty()) {
+            do {
+                destination = airports[rand.nextInt(airports.length)];
+            } while (destination.equals(origin));
+
+            response = getFlexibleFlightOptions(
+                    origin, destination, startDate, endDate, maxBudget, flightType, currency);
+        
+            flights = response.getFlights();
+
         }
 
-        // Pick one completely at random
-        int randomIndex = rand.nextInt(flights.size());
-        return flights.get(randomIndex);
+        // Return the cheapest flight
+        flights.sort((a, b) -> Double.compare(a.price, b.price));
+        return flights.get(0);
     }
             
 }

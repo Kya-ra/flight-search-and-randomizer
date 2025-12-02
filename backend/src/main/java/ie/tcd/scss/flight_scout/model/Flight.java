@@ -18,7 +18,7 @@ public class Flight {
 
     private String origin;
     private String destination;
-    private Double price;
+    public Double price;
     private String currency;
     private String tripType;  // "one-way" or "round-trip"
 

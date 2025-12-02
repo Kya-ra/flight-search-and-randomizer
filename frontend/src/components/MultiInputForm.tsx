@@ -158,23 +158,24 @@ export default function SearchForm() {
     returnFlightData?.flights?.[0]?.currency ||
     "";
 
-  const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
+    const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
-  const fetchRandomFlight = async () => {
+    const fetchRandomFlight = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      let url = "http://localhost:8080/api/flights/random";
-
-      if (form.outbound) {
-        const startDate = form.outbound.toISOString().split("T")[0];
-        const endDate = form.return
-          ? form.return.toISOString().split("T")[0]
-          : startDate;
-
-        url += `?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`;
+      if (!form.origin) {
+        setError("Please enter an origin airport");
+        return;
       }
+      if(!form.outbound) {
+        setError("Please enter an outbound date");
+        return;
+      }
+
+      let url = `http://localhost:8080/api/flights/random?origin=${form.origin}&date=${form.outbound.toISOString().split("T")[0]}&minusFlex=${outboundMin}&plusFlex=${outboundMax}`;
+
 
       const res = await fetch(url);
 
@@ -189,6 +190,7 @@ export default function SearchForm() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="p-6">
@@ -313,7 +315,8 @@ export default function SearchForm() {
 
       {randomFlight !== null && (
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">Random flight suggestion</h2>
+          <h2 className="text-xl font-semibold mb-4">Cheapest Flight to a Random Airport</h2>
+          {randomFlight ? <h2 className="text-x1 font-semibold mb-4">{randomFlight.origin} → {randomFlight.destination}</h2> : <></>}
           {randomFlight ? (
             <FlightCard
               data={{
