@@ -14,6 +14,13 @@ We used this reading week to flesh out our project plan. We created user stories
 During this planning stage we also spent time structuring the team. Instead of allowing everyone to randomly pick features to work on, we decided to split into defined roles similar to a real software engineering team. Roles like engineering/product/design manager, QA engineer, database manager, and general manager were proposed. We felt this would give us experience across typical industry responsibilities while preventing work from piling onto one person. We plan to assign final roles next week.
 
 
+## Week 3 (03/11/2025)
+
+A lot of the decisions and work this week was made on the frontend. With no members of our group having used frontend before, Kyara volunteered herself as sacrifice, and took the decision to use React and Vite on TypeScript based on recommendations she received. She set out to learn the basics of TypeScript and start to lay out a basic frontend. 
+
+The backend was initalized as a spring boot project, and the basic API call layout sketched out and inital functionality set up. Huy created the database and created the inital dockerfile, while Conor got the project into a living state, where a request could be made and received with Postman.
+
+The initial structure and learning following on from the approval of our project laid the groundwork for the progress to MVP next week
 
 
 ## Week 4 (10/11/2025)
