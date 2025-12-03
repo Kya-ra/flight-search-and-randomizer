@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 
@@ -442,42 +443,73 @@ public class FlightSearchService {
     }
 
     /**
-     * Gets round-trip flights for the next Irish bank holiday.
+     * Gets outbound and return flights for the next Irish bank holiday weekend.
      *
      * @param origin Airport code (e.g. "DUB")
      * @param destination Airport code (e.g. "BCN")
-     * @return FlightSearchResponse containing both outbound and return flights
+     * @return Map with keys "outbound" and "returnFlight", each containing FlightSearchResponse
      */
-    public FlightSearchResponse getFlightsForNextBankHolidayWeekend(String origin, String destination) {
+    public Map<String, FlightSearchResponse> getFlightsForNextBankHolidayWeekend(String origin, String destination) {
         LocalDate nextHoliday = getNextBankHoliday();
         if (nextHoliday == null) {
-            // Return empty response if no upcoming holiday
-            FlightSearchResponse emptyResponse = new FlightSearchResponse();
-            emptyResponse.setOrigin(origin);
-            emptyResponse.setDestination(destination);
-            emptyResponse.setFlights(List.of());
-            emptyResponse.setTotalResults(0);
-            return emptyResponse;
+            Map<String, FlightSearchResponse> empty = Map.of(
+                "outbound", new FlightSearchResponse(),
+                "returnFlight", new FlightSearchResponse()
+            );
+            return empty;
         }
 
-        // Outbound on Friday before the holiday/three days before bank holiday
-        LocalDate outboundDate = nextHoliday.minusDays(nextHoliday.getDayOfWeek().getValue() >= 5 ? nextHoliday.getDayOfWeek().getValue() - 5 : 2);
+        // Outbound on Friday before the holiday
+        LocalDate outboundDate = nextHoliday.minusDays(nextHoliday.getDayOfWeek().getValue() >= 5
+                ? nextHoliday.getDayOfWeek().getValue() - 5
+                : 2);
+
         // Return on the bank holiday Monday
         LocalDate returnDate = nextHoliday;
 
-        return searchFlights(
+        // Call searchFlights separately for outbound and return
+        FlightSearchResponse outboundFlights = searchFlights(
             origin,
             destination,
             outboundDate.toString(),
-            1,               // round-trip
+            2,           // one-way
+            null,
+            null,
+            1,
+            0,
+            1,
+            null,
+            "EUR"
+        );
+
+        FlightSearchResponse returnFlights = searchFlights(
+            destination,
+            origin,
             returnDate.toString(),
-            null,            // departureToken
-            1,               // adults
-            0,               // children
-            1,               // travelClass (Economy)
-            null,            // maxBudget
-            "EUR"            // currency
+            2,           // one-way
+            null,
+            null,
+            1,
+            0,
+            1,
+            null,
+            "EUR"
+        );
+
+        // Sort flights by price
+        if (outboundFlights.getFlights() != null) {
+            outboundFlights.getFlights().sort((a, b) -> Double.compare(a.getPrice(), b.getPrice()));
+        }
+
+        if (returnFlights.getFlights() != null) {
+            returnFlights.getFlights().sort((a, b) -> Double.compare(a.getPrice(), b.getPrice()));
+        }
+
+        return Map.of(
+            "outbound", outboundFlights,
+            "returnFlight", returnFlights
         );
     }
+
             
 }

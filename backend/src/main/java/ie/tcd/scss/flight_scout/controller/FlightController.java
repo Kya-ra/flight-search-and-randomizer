@@ -122,15 +122,19 @@ public class FlightController {
     * Get flights for the next Irish bank holiday weekend (Friday → Monday).
     * @param origin Airport code (required) - e.g., "DUB"
     * @param destination Airport code (required) - e.g., "LHR"
-    * @return FlightSearchResponse with flights for the next bank holiday weekend
+    * @return BankHolidayFlights containing outbound and return flights
     */
     @GetMapping("/bank-holiday")
-    public ResponseEntity<FlightSearchResponse> getNextBankHolidayFlights(
+    public ResponseEntity<Map<String, FlightSearchResponse>> getNextBankHolidayFlights(
             @RequestParam String origin,
             @RequestParam String destination) {
 
-        FlightSearchResponse response = flightSearchService.getFlightsForNextBankHolidayWeekend(origin, destination);
-        return ResponseEntity.ok(response);
+        Map<String, FlightSearchResponse> flightsMap = flightSearchService.getFlightsForNextBankHolidayWeekend(origin, destination);
+
+        FlightSearchResponse outboundFlights = flightsMap.get("outbound");
+        FlightSearchResponse returnFlights = flightsMap.get("returnFlight");
+
+        return ResponseEntity.ok(flightsMap);
     }
-        
+
 }
