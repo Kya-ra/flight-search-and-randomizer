@@ -35,8 +35,8 @@ public class FlightController {
      * @param currency Currency code (optional, default: "EUR")
      * @return FlightSearchResponse with matching flights
      */
-    @GetMapping("/search")
-    public ResponseEntity<FlightSearchResponse> searchFlights(
+    @GetMapping("/search") 
+    public ResponseEntity<?> searchFlights(
             @RequestParam String origin,
             @RequestParam String destination,
             @RequestParam Integer flight_type,
@@ -49,22 +49,29 @@ public class FlightController {
             @RequestParam(required = false) Integer maxBudget,
             @RequestParam(required = false, defaultValue = "EUR") String currency) {
 
-        FlightSearchResponse response = flightSearchService.searchFlights(
-                origin,
-                destination,
-                outboundDate,
-                flight_type,
-                returnDate,
-                departureToken,
-                adults,
-                children,
-                travelClass,
-                maxBudget,
-                currency
-        );
+        try {
+            FlightSearchResponse response = flightSearchService.searchFlights(
+                    origin,
+                    destination,
+                    outboundDate,
+                    flight_type,
+                    returnDate,
+                    departureToken,
+                    adults,
+                    children,
+                    travelClass,
+                    maxBudget,
+                    currency
+            );
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // This is where "Could not recognise origin 'xyz'..." ends up
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
     }
+
 
     /**
      * Health check endpoint
@@ -86,8 +93,8 @@ public class FlightController {
      * @param currency Currency code (optional, default = "EUR")
      * @return FlightSearchResponse containing flights for all dates in range
      */
-    @GetMapping("/flexible")
-    public ResponseEntity<FlightSearchResponse> getFlexibleFlights(
+    @GetMapping("/flexible") 
+    public ResponseEntity<?> getFlexibleFlights(
             @RequestParam String origin,
             @RequestParam String destination,
             @RequestParam String startDate,
@@ -96,12 +103,19 @@ public class FlightController {
             @RequestParam(defaultValue = "2") Integer flightType,
             @RequestParam(defaultValue = "EUR") String currency) {
 
-        FlightSearchResponse response = flightSearchService.getFlexibleFlightOptions(
-                origin, destination, startDate, endDate, maxBudget, flightType, currency
-        );
+        try {
+            FlightSearchResponse response = flightSearchService.getFlexibleFlightOptions(
+                    origin, destination, startDate, endDate, maxBudget, flightType, currency
+            );
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", ex.getMessage()));
+        }
     }
+
 
      /**
      * Returns a completely random flight from a flexible date range.
