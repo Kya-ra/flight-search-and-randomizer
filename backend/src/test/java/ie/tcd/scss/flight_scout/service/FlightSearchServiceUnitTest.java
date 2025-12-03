@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 /**
  * Unit tests for FlightSearchService.
@@ -90,21 +92,35 @@ class FlightSearchServiceUnitTest {
         assertTrue(response.getFlights().isEmpty());
     }
 
+/*@Test
+void searchFlights_EmptyApiResponse_InvalidAirport_ThrowsException() { ... }
+    // given whatever setup is already there (mocks, etc.)
+
+    assertThrows(IllegalArgumentException.class, () -> {
+        flightSearchService.searchFlights("XYZ", "2025-06-01", null, null, null);
+        // ^ use the actual parameters your test uses
+    });
+}*/
     @Test
     void searchFlights_EmptyApiResponse_ReturnsEmptyList() {
-        String emptyResponse = """
-                { "best_flights": [], "other_flights": [] }
-                """;
-        when(restTemplate.getForObject(anyString(), eq(String.class)))
-                .thenReturn(emptyResponse);
-
-        FlightSearchResponse response = flightSearchService.searchFlights(
-                "DUB", "XYZ", "2025-06-01", 2,
-                null, null, 1, 0, 1, null, "EUR"
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> flightSearchService.searchFlights(
+                        "DUB",          // origin (valid)
+                        "XYZ",          // destination (invalid)
+                        "2025-06-01",   // outboundDate
+                        1,              // flight_type  (Integer, no quotes)
+                        null,           // returnDate
+                        null,           // departureToken
+                        1,              // adults      (Integer, no quotes)
+                        0,              // children    (Integer, no quotes)
+                        1,      // travelClass
+                        500,            // maxBudget   (Integer, no quotes)
+                        "EUR"           // currency
+                )
         );
-
-        assertNotNull(response);
-        assertEquals(0, response.getTotalResults());
-        assertTrue(response.getFlights().isEmpty());
     }
+
+
+
 }

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; //Han
+//import { useState } from "react";
 import { registerLocale } from "react-datepicker";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -83,8 +84,36 @@ export default function SearchForm() {
   }
 
 
+  async function fetchFlightSearch(params: URLSearchParams): Promise<FlightSearchResponse> {
+    const res = await fetch(`http://localhost:8080/api/flights/search?${params.toString()}`);
+
+    // Read body once as text
+    const text = await res.text();
+
+    let data: any = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      // not JSON, ignore
+    }
+
+    if (!res.ok) {
+      const msg =
+        data.message || // our expected JSON { message: "..." }
+        data.error ||   // fallback if backend uses { error: "..." }
+        text ||         // plain text body
+        `Search failed with status ${res.status}`;
+
+      throw new Error(msg);
+    }
+
+    return data as FlightSearchResponse;
+  }
+
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     setError(null);
     setFlightData(null);
     setReturnFlightData(null);
@@ -94,85 +123,86 @@ export default function SearchForm() {
     setLoading(true);
 
     try {
+      // ----- build flexible date ranges -----
       const outboundDates = buildFlexDates(form.outbound, outboundMin, outboundMax);
       const returnDates = form.return
         ? buildFlexDates(form.return, returnMin, returnMax)
         : [];
 
-      const outboundResponses = await Promise.all(
-        outboundDates.map((date) => {
+      if (outboundDates.length === 0) {
+        throw new Error("Please select an outbound date.");
+      }
+
+      // ----- OUTBOUND SEARCHES -----
+      const outboundPromises = outboundDates.map((date) => {
+        const params = new URLSearchParams({
+          origin: form.origin,
+          destination: form.destination,
+          outboundDate: date,
+          flight_type: "2", // one-way for each leg
+        });
+        return fetchFlightSearch(params);
+      });
+
+      const outboundResults = await Promise.all(outboundPromises);
+
+      const mergedOutbound: FlightSearchResponse = {
+        ...outboundResults[0],
+        flights: outboundResults.flatMap((r) => r.flights || []),
+        totalResults: outboundResults.reduce(
+          (sum, r) => sum + (r.totalResults || 0),
+          0
+        ),
+        cheapestPrice: Math.min(
+          ...outboundResults
+            .map((r) => r.cheapestPrice)
+            .filter((v) => typeof v === "number")
+        ),
+      };
+
+      mergedOutbound.flights.sort((a, b) => a.price - b.price);
+      setFlightData(mergedOutbound);
+
+      // ----- RETURN SEARCHES (if user picked a return date) -----
+      if (returnDates.length > 0) {
+        const returnPromises = returnDates.map((date) => {
           const params = new URLSearchParams({
-            origin: form.origin,
-            destination: form.destination,
+            origin: form.destination,
+            destination: form.origin,
             outboundDate: date,
             flight_type: "2",
           });
+          return fetchFlightSearch(params);
+        });
 
-          return fetch(`http://localhost:8080/api/flights/search?${params}`);
-        })
-      );
-
-      const outboundJsons: FlightSearchResponse[] =
-        await Promise.all(outboundResponses.map((r) => r.json()));
-
-      const mergedOutbound: FlightSearchResponse = {
-        ...outboundJsons[0],
-        flights: outboundJsons.flatMap((d) => d.flights),
-        totalResults: outboundJsons.reduce((a, b) => a + b.totalResults, 0),
-        cheapestPrice: Math.min(...outboundJsons.map((d) => d.cheapestPrice)),
-      };
-
-      mergedOutbound.flights.sort((a, b) => {
-          if (a.layovers !== b.layovers) {
-            return a.layovers - b.layovers;
-          }
-          if (a.price === 0 && b.price === 0) return 0;
-          if (a.price === 0) return 1;
-          if (b.price === 0) return -1;
-          return a.price - b.price;  });
-      setFlightData(mergedOutbound);
-
-      if (returnDates.length > 0) {
-        const returnResponses = await Promise.all(
-          returnDates.map((date) => {
-            const params = new URLSearchParams({
-              origin: form.destination,
-              destination: form.origin,
-              outboundDate: date,
-              flight_type: "2",
-            });
-
-            return fetch(`http://localhost:8080/api/flights/search?${params}`);
-          })
-        );
-
-        const returnJsons: FlightSearchResponse[] =
-          await Promise.all(returnResponses.map((r) => r.json()));
+        const returnResults = await Promise.all(returnPromises);
 
         const mergedReturn: FlightSearchResponse = {
-          ...returnJsons[0],
-          flights: returnJsons.flatMap((d) => d.flights),
-          totalResults: returnJsons.reduce((a, b) => a + b.totalResults, 0),
-          cheapestPrice: Math.min(...returnJsons.map((d) => d.cheapestPrice)),
+          ...returnResults[0],
+          flights: returnResults.flatMap((r) => r.flights || []),
+          totalResults: returnResults.reduce(
+            (sum, r) => sum + (r.totalResults || 0),
+            0
+          ),
+          cheapestPrice: Math.min(
+            ...returnResults
+              .map((r) => r.cheapestPrice)
+              .filter((v) => typeof v === "number")
+          ),
         };
 
-        mergedReturn.flights.sort((a, b) => {
-          if (a.layovers !== b.layovers) {
-            return a.layovers - b.layovers;
-          }
-          if (a.price === 0 && b.price === 0) return 0;
-          if (a.price === 0) return 1;
-          if (b.price === 0) return -1;
-          return a.price - b.price;  });
+        mergedReturn.flights.sort((a, b) => a.price - b.price);
         setReturnFlightData(mergedReturn);
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message);
+      setError(err.message || "Something went wrong while searching flights.");
     } finally {
       setLoading(false);
     }
   }
+
+
 
 
   const outboundPrice = selectedOutbound?.price ?? flightData?.flights?.[0]?.price ?? 0;

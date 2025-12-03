@@ -14,6 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import java.io.BufferedReader; // Han
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.HashMap;
+
 @Service
 public class FlightSearchService {
 
@@ -23,6 +31,9 @@ public class FlightSearchService {
     private static final String SERP_API_URL = "https://serpapi.com/search";
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    private final Map<String, String> airportLookup = new HashMap<>(); //Han
+    private boolean airportsLoaded = false;
 
     /**
      * Search for flights with optional parameters.
@@ -40,6 +51,10 @@ public class FlightSearchService {
      * @param currency Currency code (default: "EUR")
      * @return FlightSearchResponse containing all matching flights
      */
+
+
+
+
     public FlightSearchResponse searchFlights(
             String origin,
             String destination,
@@ -52,6 +67,10 @@ public class FlightSearchService {
             Integer travelClass,
             Integer maxBudget,
             String currency) {
+        
+        //han: normalise to valid IATA codes or throw
+        origin = resolveAirportCode(origin, "origin");
+        destination = resolveAirportCode(destination, "destination");
 
         // Build SerpAPI URL with parameters
         String url = buildSerpApiUrl(origin, destination, outboundDate,  returnDate,
@@ -319,6 +338,9 @@ public class FlightSearchService {
         Integer flightType,
         String currency) {
 
+            origin = resolveAirportCode(origin, "origin"); //Han
+            destination = resolveAirportCode(destination, "destination");
+
             List<Flight> allFlights = new ArrayList<>();
 
             try {
@@ -466,5 +488,116 @@ public class FlightSearchService {
             return Double.compare(priceA, priceB);
         });
         return flights.get(0);
-    }            
+    }
+
+        // Convert user input into a valid IATA code or throw a clear error
+    private String resolveAirportCode(String input, String fieldName) {
+        if (input == null || input.isBlank()) {
+            throw new IllegalArgumentException(
+                "Please enter a " + fieldName + " airport."
+            );
+        }
+
+        ensureAirportsLoaded();
+
+        String trimmed = input.trim();
+
+        // Case 1: user typed a 3-letter code (e.g. DUB, bcn)
+        if (trimmed.length() == 3) {
+            String upper = trimmed.toUpperCase();
+            if (airportLookup.containsKey(upper)) {
+                // Known IATA code
+                return upper;
+            }
+        }
+
+        // Case 2: user typed a city or airport name
+        String lower = trimmed.toLowerCase();
+
+        // 2a: exact match on city / full airport name
+        String code = airportLookup.get(lower);
+        if (code != null) {
+            return code;
+        }
+
+        // 2b: fuzzy match – input is contained in airport name / city
+        for (Map.Entry<String, String> entry : airportLookup.entrySet()) {
+            String key = entry.getKey().toLowerCase();
+            // skip pure IATA keys (they're uppercase 3-letter)
+            if (key.length() <= 3 && key.equals(key.toUpperCase())) continue;
+
+            if (key.contains(lower)) {
+                return entry.getValue(); // e.g. "london heathrow airport" contains "heathrow"
+            }
+        }
+
+        // Nothing matched -> error out
+        throw new IllegalArgumentException(
+            "Could not recognise " + fieldName + " '" + input +
+            "'. Please enter a valid airport name or 3-letter airport code (e.g. DUB, BCN)."
+        );
+    }
+
+
+
+
+    /**
+     * Lazily load airports.csv and populate lookup map.
+     * Supports lookups by:
+     *  - IATA code (e.g. "DUB")
+     *  - City (e.g. "Dublin")
+     *  - Airport name (e.g. "Dublin Airport")
+     */
+    private synchronized void ensureAirportsLoaded() {
+        if (airportsLoaded) {
+            return;
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(
+                Paths.get("airports.csv"), StandardCharsets.UTF_8)) {
+
+            String line;
+            boolean first = true;
+
+            while ((line = reader.readLine()) != null) {
+                if (first) { // skip header
+                    first = false;
+                    continue;
+                }
+
+                String[] cols = line.split(",", -1);
+                if (cols.length < 5) {
+                    continue;
+                }
+
+                String name = cols[0].trim();   // Name
+                String city = cols[1].trim();   // City
+                String iata = cols[4].trim();   // IATA
+
+                if (iata.isEmpty()) {
+                    continue;
+                }
+
+                String iataUpper = iata.toUpperCase();
+
+                // lookup by IATA
+                airportLookup.put(iataUpper, iataUpper);
+
+                // lookup by city (lowercase)
+                if (!city.isEmpty()) {
+                    airportLookup.putIfAbsent(city.toLowerCase(), iataUpper);
+                }
+
+                // lookup by airport name (lowercase)
+                if (!name.isEmpty()) {
+                    airportLookup.putIfAbsent(name.toLowerCase(), iataUpper);
+                }
+            }
+
+            airportsLoaded = true;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load airports.csv", e);
+        }
+    }
+            
 }
