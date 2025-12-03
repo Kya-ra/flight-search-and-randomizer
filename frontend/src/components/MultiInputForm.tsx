@@ -190,6 +190,37 @@ export default function SearchForm() {
     }
   };
 
+  const fetchBankHolidayFlights = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+          const res = await fetch(
+              `http://localhost:8080/api/flights/bank-holiday?origin=${form.origin}&destination=${form.destination}`
+          );
+
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+          const data: { outbound: FlightSearchResponse; returnFlight: FlightSearchResponse } = await res.json();
+
+          if (data.outbound) {
+              data.outbound.flights.sort((a, b) => a.price - b.price);
+              setFlightData(data.outbound);
+          }
+
+          if (data.returnFlight) {
+              data.returnFlight.flights.sort((a, b) => a.price - b.price);
+              setReturnFlightData(data.returnFlight);
+          }
+
+      } catch (err: any) {
+          setError(err.message || "Error fetching bank holiday flights");
+      } finally {
+          setLoading(false);
+      }
+  };
+
+
   return (
     <div className="p-6">
       {}
@@ -231,6 +262,13 @@ export default function SearchForm() {
           className="bg-green-600 text-white py-2 rounded mt-2"
           onClick={fetchRandomFlight} >
           Get Random Flight
+        </button>
+        <button
+          type="button"
+          className="bg-yellow-600 text-white py-2 rounded mt-2"
+          onClick={fetchBankHolidayFlights}
+        >
+          Get Bank Holiday Flights
         </button>
         <button type="button" onClick={() => window.location.reload()} className="bg-blue-600 text-white py-2 rounded">
           Reset
