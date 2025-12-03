@@ -15,6 +15,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import java.io.BufferedReader; // Han
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.HashMap;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.LocalDate;
 
 @Service
@@ -26,6 +37,9 @@ public class FlightSearchService {
     private static final String SERP_API_URL = "https://serpapi.com/search";
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    private final Map<String, String> airportLookup = new HashMap<>(); //Han
+    private boolean airportsLoaded = false;
 
     /**
      * Search for flights with optional parameters.
@@ -43,6 +57,10 @@ public class FlightSearchService {
      * @param currency Currency code (default: "EUR")
      * @return FlightSearchResponse containing all matching flights
      */
+
+
+
+
     public FlightSearchResponse searchFlights(
             String origin,
             String destination,
@@ -55,6 +73,10 @@ public class FlightSearchService {
             Integer travelClass,
             Integer maxBudget,
             String currency) {
+        
+        //han: normalise to valid IATA codes or throw
+        origin = resolveAirportCode(origin, "origin");
+        destination = resolveAirportCode(destination, "destination");
 
         // Build SerpAPI URL with parameters
         String url = buildSerpApiUrl(origin, destination, outboundDate,  returnDate,
@@ -322,6 +344,9 @@ public class FlightSearchService {
         Integer flightType,
         String currency) {
 
+            origin = resolveAirportCode(origin, "origin"); //Han
+            destination = resolveAirportCode(destination, "destination");
+
             List<Flight> allFlights = new ArrayList<>();
 
             try {
@@ -377,22 +402,55 @@ public class FlightSearchService {
 
     /**
     * Returns a completely random flight from all flights in the flexible date range.
+    * @param tripType Type of themed destination (optional) - 1=Sun, 2=City, 3=Cold, 4/null=Random
     */
-    public Flight getRandomFlight() {
-        // Define some example origins and destinations
-        String[] airports = {"DUB", "BCN", "LHR", "CDG", "AMS", "FRA", "MAD"};
+    public Flight getRandomFlight(String origin, String dateString, int minusFlex, int plusFlex, Integer tripType) {
+        // Default: All airports (used for random)
+        String[] airports = {"ABZ","ALC","AMS","ATH","BCN","BER","BIO","BHX","BOD","BRS","BRU","BUD","CFN","DBV","DUS","EDI","EXT","FAO","FRA",
+                            "GVA","GLA","LPA","HAM","IOM","ADB","ACE","LBA","LIS","LPL","LHR","LYS","MAD","AGP","MLA","MAN","RAK","LIN","MUC",
+                            "NCL","NCE","PMI","CDG","PRG","FCO","SOU","TFS","VRN","VIE","ZRH","BES","BDS","BOJ","CTA","CFU","DLM","FUE","HER",
+                            "JER","KOS","MRS","MXP","NTE","NAP","NQY","OLD","PGF","PSA","RNS","SCQ","JTR","SVQ","SPU","TLS","TOS","TRN","VCE",
+                            "WAW","RIX","GCI","BCM","OTP","CAI","STR","KIV","HEL","CLJ","IAS","KEF","LUX","OSL","CPH","SAW","ARN","AYT","ORY",
+                            "BGO","AGA","BSL","BVA","BGY","BJV","BLQ","CWL","CRL","CGN","EMA","FNC","GDN","HHN","KTW","KUN","KIR","KRK","LCJ",
+                            "LGW","LTN","STN","LDE","LUZ","FMM","PFO","OPO","POZ","RBA","RZE","SDR","SOF","TLL","TIA","VNO","VLC","WMI","WRO",
+                            "ZAG","AHO","BRI","BIQ","BZG","CAG","CCF","CHQ","GRQ","GNB","IBZ","KSC","LRH","MAH","RMU","FNI","OLB","PLQ","PMO",
+                            "REU","RHO","RDZ","RVN","SZG","SZZ","SKG","TRS","ZAD","ZTH","CIA","BZR","BVE","CFR","PUF","NBE","HRG","LCA","PDV",
+                            "INV","KOI","LSI", "DUB", "KIR", "ORK", "SNN", "NOC", "CFN","LDY", "BFS", "BHD"};
+
+        // Override with themed airports if specified
+        if (tripType != null) {
+            switch (tripType) {
+                case 1: // Sun - Spanish & Mediterranean destinations
+                    airports = new String[]{"AGP", "BCN", "PMI", "ALC", "MAD", "IBZ", "FAO", "SVQ",
+                                          "MAH", "TFS", "LPA", "ACE", "FUE", "HER", "RHO", "CFU",
+                                          "KOS", "JTR", "AYT", "DLM", "SPU", "DBV"};
+                    break;
+                case 2: // City - Major European cities
+                    airports = new String[]{"LHR", "CDG", "FRA", "AMS", "BRU", "VIE", "ZRH", "MUC",
+                                          "BER", "PRG", "BUD", "WAW", "CPH", "ARN", "ATH", "FCO",
+                                          "MXP", "LIS", "MAD", "BCN", "VCE", "NAP", "MAN", "EDI",
+                                          "BHX", "NCL", "GLA", "OPO"};
+                    break;
+                case 3: // Cold - Nordic & Alpine destinations
+                    airports = new String[]{"KEF", "OSL", "BGO", "ARN", "HEL", "CPH", "RVN", "TLL",
+                                          "RIX", "VNO", "SZG", "GVA", "ZRH", "INN", "TRN", "VRN",
+                                          "SOF", "OTP", "KRK", "GDN", "WAW"};
+                    break;
+            }
+        }
+
         java.util.Random rand = new java.util.Random();
 
-        // Pick random origin and destination
-        String origin = airports[rand.nextInt(airports.length)];
+        // Pick random destination 
         String destination;
         do {
             destination = airports[rand.nextInt(airports.length)];
         } while (destination.equals(origin));
 
-        // Pick random dates 
-        java.time.LocalDate start = java.time.LocalDate.now().plusDays(rand.nextInt(30));
-        java.time.LocalDate end = start.plusDays(rand.nextInt(10) + 1); // flight duration 1–10 days
+        // Create flexible dates backend-style
+        java.time.LocalDate date = java.time.LocalDate.parse(dateString); 
+        java.time.LocalDate start = date.minusDays(minusFlex);
+        java.time.LocalDate end = date.plusDays(plusFlex);
         String startDate = start.toString();
         String endDate = end.toString();
         System.out.println("Date range: " + startDate + " → " + endDate);
@@ -401,19 +459,151 @@ public class FlightSearchService {
         Integer flightType = 2;
         String currency = "EUR";
 
-        // Get all flexible flight options
+        //Search for first flight
         FlightSearchResponse response = getFlexibleFlightOptions(
                 origin, destination, startDate, endDate, maxBudget, flightType, currency
         );
-
         List<Flight> flights = response.getFlights();
-        if (flights == null || flights.isEmpty()) {
-            return null;
+        //Make sure we actually have results to show
+        while(flights == null || flights.isEmpty()) {
+            do {
+                destination = airports[rand.nextInt(airports.length)];
+            } while (destination.equals(origin));
+
+            response = getFlexibleFlightOptions(
+                    origin, destination, startDate, endDate, maxBudget, flightType, currency);
+        
+            flights = response.getFlights();
+
         }
 
-        // Pick one completely at random
-        int randomIndex = rand.nextInt(flights.size());
-        return flights.get(randomIndex);
+        // Return the cheapest flight with the fewest layovers
+        flights.sort((a, b) -> {
+
+            if (a.getLayovers() != b.getLayovers()) {
+                return Integer.compare(a.getLayovers(), b.getLayovers());
+            }
+
+            double priceA = a.getPrice();
+            double priceB = b.getPrice();
+
+            if (priceA == 0 && priceB == 0) return 0;
+            if (priceA == 0) return 1;
+            if (priceB == 0) return -1;
+
+            return Double.compare(priceA, priceB);
+        });
+        return flights.get(0);
+    }
+
+        // Convert user input into a valid IATA code or throw a clear error
+    private String resolveAirportCode(String input, String fieldName) {
+        if (input == null || input.isBlank()) {
+            throw new IllegalArgumentException(
+                "Please enter a " + fieldName + " airport."
+            );
+        }
+
+        ensureAirportsLoaded();
+
+        String trimmed = input.trim();
+
+        // Case 1: user typed a 3-letter code (e.g. DUB, bcn)
+        if (trimmed.length() == 3) {
+            String upper = trimmed.toUpperCase();
+            if (airportLookup.containsKey(upper)) {
+                // Known IATA code
+                return upper;
+            }
+        }
+
+        // Case 2: user typed a city or airport name
+        String lower = trimmed.toLowerCase();
+
+        // 2a: exact match on city / full airport name
+        String code = airportLookup.get(lower);
+        if (code != null) {
+            return code;
+        }
+
+        // 2b: fuzzy match – input is contained in airport name / city
+        for (Map.Entry<String, String> entry : airportLookup.entrySet()) {
+            String key = entry.getKey().toLowerCase();
+            // skip pure IATA keys (they're uppercase 3-letter)
+            if (key.length() <= 3 && key.equals(key.toUpperCase())) continue;
+
+            if (key.contains(lower)) {
+                return entry.getValue(); // e.g. "london heathrow airport" contains "heathrow"
+            }
+        }
+
+        // Nothing matched -> error out
+        throw new IllegalArgumentException(
+            "Could not recognise " + fieldName + " '" + input +
+            "'. Please enter a valid airport name or 3-letter airport code (e.g. DUB, BCN)."
+        );
+    }
+
+
+
+
+    /**
+     * Lazily load airports.csv and populate lookup map.
+     * Supports lookups by:
+     *  - IATA code (e.g. "DUB")
+     *  - City (e.g. "Dublin")
+     *  - Airport name (e.g. "Dublin Airport")
+     */
+    private synchronized void ensureAirportsLoaded() {
+        if (airportsLoaded) {
+            return;
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(
+                Paths.get("airports.csv"), StandardCharsets.UTF_8)) {
+
+            String line;
+            boolean first = true;
+
+            while ((line = reader.readLine()) != null) {
+                if (first) { // skip header
+                    first = false;
+                    continue;
+                }
+
+                String[] cols = line.split(",", -1);
+                if (cols.length < 5) {
+                    continue;
+                }
+
+                String name = cols[0].trim();   // Name
+                String city = cols[1].trim();   // City
+                String iata = cols[4].trim();   // IATA
+
+                if (iata.isEmpty()) {
+                    continue;
+                }
+
+                String iataUpper = iata.toUpperCase();
+
+                // lookup by IATA
+                airportLookup.put(iataUpper, iataUpper);
+
+                // lookup by city (lowercase)
+                if (!city.isEmpty()) {
+                    airportLookup.putIfAbsent(city.toLowerCase(), iataUpper);
+                }
+
+                // lookup by airport name (lowercase)
+                if (!name.isEmpty()) {
+                    airportLookup.putIfAbsent(name.toLowerCase(), iataUpper);
+                }
+            }
+
+            airportsLoaded = true;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load airports.csv", e);
+        }
     }
 
     private static final List<LocalDate> BANK_HOLIDAYS_IRELAND = Arrays.asList(

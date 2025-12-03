@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; //Han
+//import { useState } from "react";
 import { registerLocale } from "react-datepicker";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -55,6 +56,18 @@ export default function SearchForm() {
   const [isBankHoliday, setIsBankHoliday] = useState(false);
 
 
+  const today = new Date();
+  const sixtyDaysFromToday = new Date();
+  const oneYearFromToday = new Date();
+  sixtyDaysFromToday.setDate(today.getDate() + 60);
+  oneYearFromToday.setDate(today.getDate() + 366);
+
+  const getRandomDate = () => {
+    const minTime = today.getTime();
+    const maxTime = sixtyDaysFromToday.getTime();
+    const randomTime = minTime + Math.random() * (maxTime - minTime);
+    return new Date(randomTime);
+  };
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -75,8 +88,36 @@ export default function SearchForm() {
   }
 
 
+  async function fetchFlightSearch(params: URLSearchParams): Promise<FlightSearchResponse> {
+    const res = await fetch(`http://localhost:8080/api/flights/search?${params.toString()}`);
+
+    // Read body once as text
+    const text = await res.text();
+
+    let data: any = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      // not JSON, ignore
+    }
+
+    if (!res.ok) {
+      const msg =
+        data.message || // our expected JSON { message: "..." }
+        data.error ||   // fallback if backend uses { error: "..." }
+        text ||         // plain text body
+        `Search failed with status ${res.status}`;
+
+      throw new Error(msg);
+    }
+
+    return data as FlightSearchResponse;
+  }
+
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     setError(null);
     setFlightData(null);
     setReturnFlightData(null);
@@ -86,59 +127,72 @@ export default function SearchForm() {
     setLoading(true);
 
     try {
+      // ----- build flexible date ranges -----
       const outboundDates = buildFlexDates(form.outbound, outboundMin, outboundMax);
       const returnDates = form.return
         ? buildFlexDates(form.return, returnMin, returnMax)
         : [];
 
-      const outboundResponses = await Promise.all(
-        outboundDates.map((date) => {
-          const params = new URLSearchParams({
-            origin: form.origin,
-            destination: form.destination,
-            outboundDate: date,
-            flight_type: "2",
-          });
+      if (outboundDates.length === 0) {
+        throw new Error("Please select an outbound date.");
+      }
 
-          return fetch(`http://localhost:8080/api/flights/search?${params}`);
-        })
-      );
+      // ----- OUTBOUND SEARCHES -----
+      const outboundPromises = outboundDates.map((date) => {
+        const params = new URLSearchParams({
+          origin: form.origin,
+          destination: form.destination,
+          outboundDate: date,
+          flight_type: "2", // one-way for each leg
+        });
+        return fetchFlightSearch(params);
+      });
 
-      const outboundJsons: FlightSearchResponse[] =
-        await Promise.all(outboundResponses.map((r) => r.json()));
+      const outboundResults = await Promise.all(outboundPromises);
 
       const mergedOutbound: FlightSearchResponse = {
-        ...outboundJsons[0],
-        flights: outboundJsons.flatMap((d) => d.flights),
-        totalResults: outboundJsons.reduce((a, b) => a + b.totalResults, 0),
-        cheapestPrice: Math.min(...outboundJsons.map((d) => d.cheapestPrice)),
+        ...outboundResults[0],
+        flights: outboundResults.flatMap((r) => r.flights || []),
+        totalResults: outboundResults.reduce(
+          (sum, r) => sum + (r.totalResults || 0),
+          0
+        ),
+        cheapestPrice: Math.min(
+          ...outboundResults
+            .map((r) => r.cheapestPrice)
+            .filter((v) => typeof v === "number")
+        ),
       };
 
       mergedOutbound.flights.sort((a, b) => a.price - b.price);
       setFlightData(mergedOutbound);
 
+      // ----- RETURN SEARCHES (if user picked a return date) -----
       if (returnDates.length > 0) {
-        const returnResponses = await Promise.all(
-          returnDates.map((date) => {
-            const params = new URLSearchParams({
-              origin: form.destination,
-              destination: form.origin,
-              outboundDate: date,
-              flight_type: "2",
-            });
+        const returnPromises = returnDates.map((date) => {
+          const params = new URLSearchParams({
+            origin: form.destination,
+            destination: form.origin,
+            outboundDate: date,
+            flight_type: "2",
+          });
+          return fetchFlightSearch(params);
+        });
 
-            return fetch(`http://localhost:8080/api/flights/search?${params}`);
-          })
-        );
-
-        const returnJsons: FlightSearchResponse[] =
-          await Promise.all(returnResponses.map((r) => r.json()));
+        const returnResults = await Promise.all(returnPromises);
 
         const mergedReturn: FlightSearchResponse = {
-          ...returnJsons[0],
-          flights: returnJsons.flatMap((d) => d.flights),
-          totalResults: returnJsons.reduce((a, b) => a + b.totalResults, 0),
-          cheapestPrice: Math.min(...returnJsons.map((d) => d.cheapestPrice)),
+          ...returnResults[0],
+          flights: returnResults.flatMap((r) => r.flights || []),
+          totalResults: returnResults.reduce(
+            (sum, r) => sum + (r.totalResults || 0),
+            0
+          ),
+          cheapestPrice: Math.min(
+            ...returnResults
+              .map((r) => r.cheapestPrice)
+              .filter((v) => typeof v === "number")
+          ),
         };
 
         mergedReturn.flights.sort((a, b) => a.price - b.price);
@@ -146,11 +200,13 @@ export default function SearchForm() {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message);
+      setError(err.message || "Something went wrong while searching flights.");
     } finally {
       setLoading(false);
     }
   }
+
+
 
 
   const outboundPrice = selectedOutbound?.price ?? flightData?.flights?.[0]?.price ?? 0;
@@ -162,22 +218,25 @@ export default function SearchForm() {
     returnFlightData?.flights?.[0]?.currency ||
     "";
 
-  const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
+    const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
-  const fetchRandomFlight = async () => {
+    const fetchRandomFlight = async (tripType?: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      let url = "http://localhost:8080/api/flights/random";
+      if (!form.origin) {
+        setError("Please enter an origin airport");
+        return;
+      }
+      if(!form.outbound) {
+        form.outbound = getRandomDate();
+      }
 
-      if (form.outbound) {
-        const startDate = form.outbound.toISOString().split("T")[0];
-        const endDate = form.return
-          ? form.return.toISOString().split("T")[0]
-          : startDate;
+      let url = `http://localhost:8080/api/flights/random?origin=${form.origin}&date=${form.outbound.toISOString().split("T")[0]}&minusFlex=${outboundMin}&plusFlex=${outboundMax}`;
 
-        url += `?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`;
+      if (tripType !== undefined) {
+        url += `&tripType=${tripType}`;
       }
 
       const res = await fetch(url);
@@ -254,6 +313,8 @@ export default function SearchForm() {
           placeholderText="Outbound"
           dateFormat="dd/MM/yyyy"
           locale="en-IE"
+          minDate={today}
+          maxDate={oneYearFromToday}
           required
         />
         <DatePicker
@@ -262,20 +323,16 @@ export default function SearchForm() {
           placeholderText="Return"
           dateFormat="dd/MM/yyyy"
           locale="en-IE"
+          minDate={form.outbound}
+          maxDate={oneYearFromToday}
         />
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
         </button>
-        <button
-          type="button"
-          className="bg-green-600 text-white py-2 rounded mt-2"
-          onClick={fetchRandomFlight} >
-          Get Random Flight
-        </button>
         {/* Button */}
         <button
           type="button"
-          className="bg-yellow-600 text-white py-2 rounded mt-2"
+          className="bg-yellow-600 text-white py-2 rounded mt-4"
           onClick={() => {
             // Show warning if either origin or destination is empty
             if (!form.origin || !form.destination) {
@@ -296,11 +353,46 @@ export default function SearchForm() {
             Please enter both origin and destination first.
           </p>
         )}
+
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          <button
+            type="button"
+            className="bg-yellow-500 text-white py-3 rounded text-2xl hover:bg-yellow-600"
+            onClick={() => fetchRandomFlight(1)}
+            title="Sun & Beach"
+          >
+            ☀️
+          </button>
+          <button
+            type="button"
+            className="bg-gray-600 text-white py-3 rounded text-2xl hover:bg-gray-700"
+            onClick={() => fetchRandomFlight(2)}
+            title="City"
+          >
+            🏙️
+          </button>
+          <button
+            type="button"
+            className="bg-blue-400 text-white py-3 rounded text-2xl hover:bg-blue-500"
+            onClick={() => fetchRandomFlight(3)}
+            title="Cold"
+          >
+            ❄️
+          </button>
+          <button
+            type="button"
+            className="bg-purple-600 text-white py-3 rounded text-2xl hover:bg-purple-700"
+            onClick={() => fetchRandomFlight(4)}
+            title="Random"
+          >
+            🎲
+          </button>
+        </div>
+
         <button type="button" onClick={() => window.location.reload()} className="bg-blue-600 text-white py-2 rounded">
           Reset
         </button>
       </form>
-
    <div className="flex flex-col gap-2">
     <span className="font-semibold">{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}Outbound Flex{"\u2003"}Return Flex</span>
 
@@ -377,7 +469,8 @@ export default function SearchForm() {
 
       {randomFlight !== null && (
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">Random flight suggestion</h2>
+          <h2 className="text-xl font-semibold mb-4">Cheapest Flight to a Random Airport</h2>
+          {randomFlight ? <h2 className="text-x1 font-semibold mb-4">{randomFlight.origin} → {randomFlight.destination}</h2> : <></>}
           {randomFlight ? (
             <FlightCard
               data={{
