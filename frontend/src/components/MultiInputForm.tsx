@@ -51,6 +51,18 @@ export default function SearchForm() {
   const [returnMin, setReturnMin] = useState(0);
   const [returnMax, setReturnMax] = useState(0);
 
+  const today = new Date();
+  const sixtyDaysFromToday = new Date();
+  const oneYearFromToday = new Date();
+  sixtyDaysFromToday.setDate(today.getDate() + 60);
+  oneYearFromToday.setDate(today.getDate() + 366);
+
+  const getRandomDate = () => {
+    const minTime = today.getTime();
+    const maxTime = sixtyDaysFromToday.getTime();
+    const randomTime = minTime + Math.random() * (maxTime - minTime);
+    return new Date(randomTime);
+  };
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
@@ -110,7 +122,14 @@ export default function SearchForm() {
         cheapestPrice: Math.min(...outboundJsons.map((d) => d.cheapestPrice)),
       };
 
-      mergedOutbound.flights.sort((a, b) => a.price - b.price);
+      mergedOutbound.flights.sort((a, b) => {
+          if (a.layovers !== b.layovers) {
+            return a.layovers - b.layovers;
+          }
+          if (a.price === 0 && b.price === 0) return 0;
+          if (a.price === 0) return 1;
+          if (b.price === 0) return -1;
+          return a.price - b.price;  });
       setFlightData(mergedOutbound);
 
       if (returnDates.length > 0) {
@@ -137,7 +156,14 @@ export default function SearchForm() {
           cheapestPrice: Math.min(...returnJsons.map((d) => d.cheapestPrice)),
         };
 
-        mergedReturn.flights.sort((a, b) => a.price - b.price);
+        mergedReturn.flights.sort((a, b) => {
+          if (a.layovers !== b.layovers) {
+            return a.layovers - b.layovers;
+          }
+          if (a.price === 0 && b.price === 0) return 0;
+          if (a.price === 0) return 1;
+          if (b.price === 0) return -1;
+          return a.price - b.price;  });
         setReturnFlightData(mergedReturn);
       }
     } catch (err: any) {
@@ -158,23 +184,23 @@ export default function SearchForm() {
     returnFlightData?.flights?.[0]?.currency ||
     "";
 
-  const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
+    const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
-  const fetchRandomFlight = async () => {
+    const fetchRandomFlight = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      let url = "http://localhost:8080/api/flights/random";
-
-      if (form.outbound) {
-        const startDate = form.outbound.toISOString().split("T")[0];
-        const endDate = form.return
-          ? form.return.toISOString().split("T")[0]
-          : startDate;
-
-        url += `?origin=${form.origin}&destination=${form.destination}&startDate=${startDate}&endDate=${endDate}`;
+      if (!form.origin) {
+        setError("Please enter an origin airport");
+        return;
       }
+      if(!form.outbound) {
+        form.outbound = getRandomDate();
+      }
+
+      let url = `http://localhost:8080/api/flights/random?origin=${form.origin}&date=${form.outbound.toISOString().split("T")[0]}&minusFlex=${outboundMin}&plusFlex=${outboundMax}`;
+
 
       const res = await fetch(url);
 
@@ -189,6 +215,7 @@ export default function SearchForm() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="p-6">
@@ -214,6 +241,8 @@ export default function SearchForm() {
           placeholderText="Outbound"
           dateFormat="dd/MM/yyyy"
           locale="en-IE"
+          minDate={today}
+          maxDate={oneYearFromToday}
           required
         />
         <DatePicker
@@ -222,6 +251,8 @@ export default function SearchForm() {
           placeholderText="Return"
           dateFormat="dd/MM/yyyy"
           locale="en-IE"
+          minDate={form.outbound}
+          maxDate={oneYearFromToday}
         />
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
@@ -236,7 +267,6 @@ export default function SearchForm() {
           Reset
         </button>
       </form>
-
    <div className="flex flex-col gap-2">
     <span className="font-semibold">{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}{"\u2003"}Outbound Flex{"\u2003"}Return Flex</span>
 
@@ -313,7 +343,8 @@ export default function SearchForm() {
 
       {randomFlight !== null && (
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">Random flight suggestion</h2>
+          <h2 className="text-xl font-semibold mb-4">Cheapest Flight to a Random Airport</h2>
+          {randomFlight ? <h2 className="text-x1 font-semibold mb-4">{randomFlight.origin} → {randomFlight.destination}</h2> : <></>}
           {randomFlight ? (
             <FlightCard
               data={{
