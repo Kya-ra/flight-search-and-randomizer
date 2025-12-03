@@ -447,7 +447,7 @@ public class FlightSearchService {
      *
      * @param origin Airport code (e.g. "DUB")
      * @param destination Airport code (e.g. "BCN")
-     * @return Map with keys "outbound" and "returnFlight", each containing FlightSearchResponse
+     * @return Map with keys "outbound" and "returnFlight" containing flights for the weekend
      */
     public Map<String, FlightSearchResponse> getFlightsForNextBankHolidayWeekend(String origin, String destination) {
         LocalDate nextHoliday = getNextBankHoliday();
@@ -459,12 +459,12 @@ public class FlightSearchService {
             return empty;
         }
 
-        // Outbound on Friday before the holiday
+        // Outbound on Friday before the holiday/or three days before bank holiday
         LocalDate outboundDate = nextHoliday.minusDays(nextHoliday.getDayOfWeek().getValue() >= 5
                 ? nextHoliday.getDayOfWeek().getValue() - 5
                 : 2);
 
-        // Return on the bank holiday Monday
+        // Return on the bank holiday 
         LocalDate returnDate = nextHoliday;
 
         // Call searchFlights separately for outbound and return

@@ -51,6 +51,9 @@ export default function SearchForm() {
   const [returnMin, setReturnMin] = useState(0);
   const [returnMax, setReturnMax] = useState(0);
   const [bankHolidayWarning, setBankHolidayWarning] = useState(false);
+  const [bankHolidayDate, setBankHolidayDate] = useState<string | null>(null);
+  const [isBankHoliday, setIsBankHoliday] = useState(false);
+
 
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -207,6 +210,11 @@ export default function SearchForm() {
           if (data.outbound) {
               data.outbound.flights.sort((a, b) => a.price - b.price);
               setFlightData(data.outbound);
+
+              if (data.outbound.flights.length > 0) {
+              const firstDate = data.outbound.flights[0].departureTime.split("T")[0];
+              setBankHolidayDate(firstDate);
+            }
           }
 
           if (data.returnFlight) {
@@ -277,6 +285,7 @@ export default function SearchForm() {
 
             // Hide warning and fetch bank holiday flights
             setBankHolidayWarning(false);
+            setIsBankHoliday(true);
             fetchBankHolidayFlights();
           }}
         >
@@ -390,6 +399,15 @@ export default function SearchForm() {
       )}
 
       {}
+      {isBankHoliday && bankHolidayDate && (
+        <h2 className="text-xl font-semibold mt-6 mb-4">
+          Bank Holiday Flights for {new Date(bankHolidayDate).toLocaleDateString("en-IE", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })} Bank Holiday
+        </h2>
+      )}
       {flightData && (
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-4">
