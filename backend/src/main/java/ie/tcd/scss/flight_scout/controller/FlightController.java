@@ -105,11 +105,17 @@ public class FlightController {
 
      /**
      * Returns a completely random flight from a flexible date range.
+     * @param tripType Type of themed destination (optional) - 1=Sun, 2=City, 3=Cold, 4/null=Random
      */
     @GetMapping("/random")
-    public ResponseEntity<?> getRandomFlight(@RequestParam String origin, @RequestParam String date, @RequestParam int minusFlex, @RequestParam int plusFlex) {
+    public ResponseEntity<?> getRandomFlight(
+            @RequestParam String origin,
+            @RequestParam String date,
+            @RequestParam int minusFlex,
+            @RequestParam int plusFlex,
+            @RequestParam(required = false) Integer tripType) {
         System.out.println("Random flight endpoint hit");
-        Flight randomFlight = flightSearchService.getRandomFlight(origin, date, minusFlex, plusFlex); 
+        Flight randomFlight = flightSearchService.getRandomFlight(origin, date, minusFlex, plusFlex, tripType);
 
         if (randomFlight == null) {
             return ResponseEntity.ok(Map.of("message", "No flights found"));

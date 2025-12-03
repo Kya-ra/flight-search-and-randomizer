@@ -374,9 +374,10 @@ public class FlightSearchService {
 
     /**
     * Returns a completely random flight from all flights in the flexible date range.
+    * @param tripType Type of themed destination (optional) - 1=Sun, 2=City, 3=Cold, 4/null=Random
     */
-    public Flight getRandomFlight(String origin, String dateString, int minusFlex, int plusFlex) {
-        // List of airports with direct flights from an airport in Ireland
+    public Flight getRandomFlight(String origin, String dateString, int minusFlex, int plusFlex, Integer tripType) {
+        // Default: All airports (used for random)
         String[] airports = {"ABZ","ALC","AMS","ATH","BCN","BER","BIO","BHX","BOD","BRS","BRU","BUD","CFN","DBV","DUS","EDI","EXT","FAO","FRA",
                             "GVA","GLA","LPA","HAM","IOM","ADB","ACE","LBA","LIS","LPL","LHR","LYS","MAD","AGP","MLA","MAN","RAK","LIN","MUC",
                             "NCL","NCE","PMI","CDG","PRG","FCO","SOU","TFS","VRN","VIE","ZRH","BES","BDS","BOJ","CTA","CFU","DLM","FUE","HER",
@@ -387,6 +388,29 @@ public class FlightSearchService {
                             "ZAG","AHO","BRI","BIQ","BZG","CAG","CCF","CHQ","GRQ","GNB","IBZ","KSC","LRH","MAH","RMU","FNI","OLB","PLQ","PMO",
                             "REU","RHO","RDZ","RVN","SZG","SZZ","SKG","TRS","ZAD","ZTH","CIA","BZR","BVE","CFR","PUF","NBE","HRG","LCA","PDV",
                             "INV","KOI","LSI", "DUB", "KIR", "ORK", "SNN", "NOC", "CFN","LDY", "BFS", "BHD"};
+
+        // Override with themed airports if specified
+        if (tripType != null) {
+            switch (tripType) {
+                case 1: // Sun - Spanish & Mediterranean destinations
+                    airports = new String[]{"AGP", "BCN", "PMI", "ALC", "MAD", "IBZ", "FAO", "SVQ",
+                                          "MAH", "TFS", "LPA", "ACE", "FUE", "HER", "RHO", "CFU",
+                                          "KOS", "JTR", "AYT", "DLM", "SPU", "DBV"};
+                    break;
+                case 2: // City - Major European cities
+                    airports = new String[]{"LHR", "CDG", "FRA", "AMS", "BRU", "VIE", "ZRH", "MUC",
+                                          "BER", "PRG", "BUD", "WAW", "CPH", "ARN", "ATH", "FCO",
+                                          "MXP", "LIS", "MAD", "BCN", "VCE", "NAP", "MAN", "EDI",
+                                          "BHX", "NCL", "GLA", "OPO"};
+                    break;
+                case 3: // Cold - Nordic & Alpine destinations
+                    airports = new String[]{"KEF", "OSL", "BGO", "ARN", "HEL", "CPH", "RVN", "TLL",
+                                          "RIX", "VNO", "SZG", "GVA", "ZRH", "INN", "TRN", "VRN",
+                                          "SOF", "OTP", "KRK", "GDN", "WAW"};
+                    break;
+            }
+        }
+
         java.util.Random rand = new java.util.Random();
 
         // Pick random destination 

@@ -186,7 +186,7 @@ export default function SearchForm() {
 
     const totalPrice = outboundPrice + (form.return ? returnPrice : 0);
 
-    const fetchRandomFlight = async () => {
+    const fetchRandomFlight = async (tripType?: number) => {
     setLoading(true);
     setError(null);
 
@@ -201,6 +201,9 @@ export default function SearchForm() {
 
       let url = `http://localhost:8080/api/flights/random?origin=${form.origin}&date=${form.outbound.toISOString().split("T")[0]}&minusFlex=${outboundMin}&plusFlex=${outboundMax}`;
 
+      if (tripType !== undefined) {
+        url += `&tripType=${tripType}`;
+      }
 
       const res = await fetch(url);
 
@@ -257,12 +260,42 @@ export default function SearchForm() {
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
         </button>
-        <button
-          type="button"
-          className="bg-green-600 text-white py-2 rounded mt-2"
-          onClick={fetchRandomFlight} >
-          Get Random Flight
-        </button>
+
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          <button
+            type="button"
+            className="bg-yellow-500 text-white py-3 rounded text-2xl hover:bg-yellow-600"
+            onClick={() => fetchRandomFlight(1)}
+            title="Sun & Beach"
+          >
+            ☀️
+          </button>
+          <button
+            type="button"
+            className="bg-gray-600 text-white py-3 rounded text-2xl hover:bg-gray-700"
+            onClick={() => fetchRandomFlight(2)}
+            title="City"
+          >
+            🏙️
+          </button>
+          <button
+            type="button"
+            className="bg-blue-400 text-white py-3 rounded text-2xl hover:bg-blue-500"
+            onClick={() => fetchRandomFlight(3)}
+            title="Cold"
+          >
+            ❄️
+          </button>
+          <button
+            type="button"
+            className="bg-purple-600 text-white py-3 rounded text-2xl hover:bg-purple-700"
+            onClick={() => fetchRandomFlight(4)}
+            title="Random"
+          >
+            🎲
+          </button>
+        </div>
+
         <button type="button" onClick={() => window.location.reload()} className="bg-blue-600 text-white py-2 rounded">
           Reset
         </button>
