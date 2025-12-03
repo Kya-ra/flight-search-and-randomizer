@@ -51,6 +51,10 @@ export default function SearchForm() {
   const [outboundMax, setOutboundMax] = useState(0);
   const [returnMin, setReturnMin] = useState(0);
   const [returnMax, setReturnMax] = useState(0);
+  const [bankHolidayWarning, setBankHolidayWarning] = useState(false);
+  const [bankHolidayDate, setBankHolidayDate] = useState<string | null>(null);
+  const [isBankHoliday, setIsBankHoliday] = useState(false);
+
 
   const today = new Date();
   const sixtyDaysFromToday = new Date();
@@ -249,6 +253,41 @@ export default function SearchForm() {
     }
   };
 
+  const fetchBankHolidayFlights = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+          const res = await fetch(
+              `http://localhost:8080/api/flights/bank-holiday?origin=${form.origin}&destination=${form.destination}`
+          );
+
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+          const data: { outbound: FlightSearchResponse; returnFlight: FlightSearchResponse } = await res.json();
+
+          if (data.outbound) {
+              data.outbound.flights.sort((a, b) => a.price - b.price);
+              setFlightData(data.outbound);
+
+              if (data.outbound.flights.length > 0) {
+              const firstDate = data.outbound.flights[0].departureTime.split("T")[0];
+              setBankHolidayDate(firstDate);
+            }
+          }
+
+          if (data.returnFlight) {
+              data.returnFlight.flights.sort((a, b) => a.price - b.price);
+              setReturnFlightData(data.returnFlight);
+          }
+
+      } catch (err: any) {
+          setError(err.message || "Error fetching bank holiday flights");
+      } finally {
+          setLoading(false);
+      }
+  };
+
 
   return (
     <div className="p-6">
@@ -290,6 +329,30 @@ export default function SearchForm() {
         <button type="submit" className="bg-blue-600 text-white py-2 rounded">
           Search
         </button>
+        {/* Button */}
+        <button
+          type="button"
+          className="bg-yellow-600 text-white py-2 rounded mt-4"
+          onClick={() => {
+            // Show warning if either origin or destination is empty
+            if (!form.origin || !form.destination) {
+              setBankHolidayWarning(true);
+              return;
+            }
+
+            // Hide warning and fetch bank holiday flights
+            setBankHolidayWarning(false);
+            setIsBankHoliday(true);
+            fetchBankHolidayFlights();
+          }}
+        >
+          Get Bank Holiday Flight`s
+        </button>
+        {bankHolidayWarning && (
+          <p className="text-red-500 text-sm mt-1">
+            Please enter both origin and destination first.
+          </p>
+        )}
 
         <div className="grid grid-cols-4 gap-2 mt-2">
           <button
@@ -429,6 +492,15 @@ export default function SearchForm() {
       )}
 
       {}
+      {isBankHoliday && bankHolidayDate && (
+        <h2 className="text-xl font-semibold mt-6 mb-4">
+          Bank Holiday Flights for {new Date(bankHolidayDate).toLocaleDateString("en-IE", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })} Bank Holiday
+        </h2>
+      )}
       {flightData && (
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-4">
