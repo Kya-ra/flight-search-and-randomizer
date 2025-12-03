@@ -50,6 +50,7 @@ export default function SearchForm() {
   const [outboundMax, setOutboundMax] = useState(0);
   const [returnMin, setReturnMin] = useState(0);
   const [returnMax, setReturnMax] = useState(0);
+  const [bankHolidayWarning, setBankHolidayWarning] = useState(false);
 
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -263,13 +264,29 @@ export default function SearchForm() {
           onClick={fetchRandomFlight} >
           Get Random Flight
         </button>
+        {/* Button */}
         <button
           type="button"
           className="bg-yellow-600 text-white py-2 rounded mt-2"
-          onClick={fetchBankHolidayFlights}
+          onClick={() => {
+            // Show warning if either origin or destination is empty
+            if (!form.origin || !form.destination) {
+              setBankHolidayWarning(true);
+              return;
+            }
+
+            // Hide warning and fetch bank holiday flights
+            setBankHolidayWarning(false);
+            fetchBankHolidayFlights();
+          }}
         >
-          Get Bank Holiday Flights
+          Get Bank Holiday Flight`s
         </button>
+        {bankHolidayWarning && (
+          <p className="text-red-500 text-sm mt-1">
+            Please enter both origin and destination first.
+          </p>
+        )}
         <button type="button" onClick={() => window.location.reload()} className="bg-blue-600 text-white py-2 rounded">
           Reset
         </button>
