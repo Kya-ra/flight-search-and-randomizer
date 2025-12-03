@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
@@ -412,6 +413,71 @@ public class FlightSearchService {
         // Pick one completely at random
         int randomIndex = rand.nextInt(flights.size());
         return flights.get(randomIndex);
+    }
+
+    private static final List<LocalDate> BANK_HOLIDAYS_IRELAND = Arrays.asList(
+        LocalDate.of(2026, 1, 1),
+        LocalDate.of(2026, 2, 2),
+        LocalDate.of(2026, 3, 17),
+        LocalDate.of(2026, 4, 6),
+        LocalDate.of(2026, 5, 4),
+        LocalDate.of(2026, 6, 1),
+        LocalDate.of(2026, 8, 3),
+        LocalDate.of(2026, 10, 26),
+        LocalDate.of(2026, 12, 25),
+        LocalDate.of(2026, 12, 26)
+    );
+    
+    /**
+     * Finds the next bank holiday after today.
+     */
+    private LocalDate getNextBankHoliday() {
+        LocalDate today = LocalDate.now();
+        for (LocalDate holiday : BANK_HOLIDAYS_IRELAND) {
+            if (!holiday.isBefore(today)) {
+                return holiday;
+            }
+        }
+        return null; // No upcoming holiday
+    }
+
+    /**
+     * Gets round-trip flights for the next Irish bank holiday.
+     *
+     * @param origin Airport code (e.g. "DUB")
+     * @param destination Airport code (e.g. "BCN")
+     * @return FlightSearchResponse containing both outbound and return flights
+     */
+    public FlightSearchResponse getFlightsForNextBankHolidayWeekend(String origin, String destination) {
+        LocalDate nextHoliday = getNextBankHoliday();
+        if (nextHoliday == null) {
+            // Return empty response if no upcoming holiday
+            FlightSearchResponse emptyResponse = new FlightSearchResponse();
+            emptyResponse.setOrigin(origin);
+            emptyResponse.setDestination(destination);
+            emptyResponse.setFlights(List.of());
+            emptyResponse.setTotalResults(0);
+            return emptyResponse;
+        }
+
+        // Outbound on Friday before the holiday/three days before bank holiday
+        LocalDate outboundDate = nextHoliday.minusDays(nextHoliday.getDayOfWeek().getValue() >= 5 ? nextHoliday.getDayOfWeek().getValue() - 5 : 2);
+        // Return on the bank holiday Monday
+        LocalDate returnDate = nextHoliday;
+
+        return searchFlights(
+            origin,
+            destination,
+            outboundDate.toString(),
+            1,               // round-trip
+            returnDate.toString(),
+            null,            // departureToken
+            1,               // adults
+            0,               // children
+            1,               // travelClass (Economy)
+            null,            // maxBudget
+            "EUR"            // currency
+        );
     }
             
 }

@@ -117,5 +117,20 @@ public class FlightController {
 
         return ResponseEntity.ok(randomFlight);
     }
-    
+
+    /**
+    * Get flights for the next Irish bank holiday weekend (Friday → Monday).
+    * @param origin Airport code (required) - e.g., "DUB"
+    * @param destination Airport code (required) - e.g., "LHR"
+    * @return FlightSearchResponse with flights for the next bank holiday weekend
+    */
+    @GetMapping("/bank-holiday")
+    public ResponseEntity<FlightSearchResponse> getNextBankHolidayFlights(
+            @RequestParam String origin,
+            @RequestParam String destination) {
+
+        FlightSearchResponse response = flightSearchService.getFlightsForNextBankHolidayWeekend(origin, destination);
+        return ResponseEntity.ok(response);
+    }
+        
 }
