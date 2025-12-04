@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Auth.css';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8080';
 
@@ -61,12 +62,12 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-3xl font-bold text-white mb-6 text-center">Sign Up</h1>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1 className="auth-title">Sign Up</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-white mb-2">
+            <label htmlFor="name" className="auth-label">
               Name
             </label>
             <input
@@ -75,11 +76,11 @@ const Signup = () => {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="John Doe"
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="auth-input"
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-white mb-2">
+            <label htmlFor="email" className="auth-label">
               Email
             </label>
             <input
@@ -88,11 +89,11 @@ const Signup = () => {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="john@example.com"
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="auth-input"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-white mb-2">
+            <label htmlFor="password" className="auth-label">
               Password
             </label>
             <input
@@ -101,11 +102,11 @@ const Signup = () => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="password"
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="auth-input"
             />
           </div>
           <div>
-            <label htmlFor="confirmPassword" className="block text-white mb-2">
+            <label htmlFor="confirmPassword" className="auth-label">
               Confirm Password
             </label>
             <input
@@ -114,7 +115,7 @@ const Signup = () => {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="password"
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="auth-input"
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -126,12 +127,9 @@ const Signup = () => {
             {isSubmitting ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
-        <p className="text-gray-400 text-center mt-4">
+        <p className="auth-text">
           Already have an account?{' '}
-          <button
-            onClick={() => navigate('/login')}
-            className="text-blue-500 hover:text-blue-400"
-          >
+          <button onClick={() => navigate('/login')} className="auth-link">
             Sign in
           </button>
         </p>

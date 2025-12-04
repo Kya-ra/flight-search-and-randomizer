@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Auth.css';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8080';
 
@@ -52,12 +53,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-3xl font-bold text-white mb-6 text-center">Login</h1>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1 className="auth-title">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-white mb-2">
+            <label htmlFor="email" className="auth-label">
               Email
             </label>
             <input
@@ -66,11 +67,11 @@ const Login = () => {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="john@example.com"
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="auth-input"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-white mb-2">
+            <label htmlFor="password" className="auth-label">
               Password
             </label>
             <input
@@ -79,7 +80,7 @@ const Login = () => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="password"
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="auth-input"
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -91,12 +92,9 @@ const Login = () => {
             {isSubmitting ? 'Logging in…' : 'Log in'}
           </button>
         </form>
-        <p className="text-gray-400 text-center mt-4">
+        <p className="auth-text">
           Don't have an account?{' '}
-          <button
-            onClick={() => navigate('/signup')}
-            className="text-green-500 hover:text-green-400"
-          >
+          <button onClick={() => navigate('/signup')} className="auth-link">
             Sign up
           </button>
         </p>
