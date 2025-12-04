@@ -52,12 +52,21 @@ export default function Header() {
       backgroundColor: '#1f2937',
       boxSizing: 'border-box'
     }}>
-      <h1 style={{
-        fontSize: '2.25rem',
-        fontWeight: 'bold',
-        color: 'white',
-        margin: 0
-      }}>SkySaver</h1>
+      <h1
+        onClick={() => window.location.reload()}
+        style={{
+          fontSize: '2.25rem',
+          fontWeight: 'bold',
+          color: 'white',
+          margin: 0,
+          cursor: 'pointer',
+          transition: 'opacity 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      >
+        SkySaver
+      </h1>
 
       {!loading && (
         <div style={{
