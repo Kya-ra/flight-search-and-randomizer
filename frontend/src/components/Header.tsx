@@ -42,21 +42,50 @@ export default function Header() {
   };
 
   return (
-    <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
-      <h1 className="text-2xl font-bold">SkySaver</h1>
+    <header style={{
+      width: '100%',
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1.5rem',
+      backgroundColor: '#1f2937',
+      boxSizing: 'border-box'
+    }}>
+      <h1
+        onClick={() => window.location.reload()}
+        style={{
+          fontSize: '2.25rem',
+          fontWeight: 'bold',
+          color: 'white',
+          margin: 0,
+          cursor: 'pointer',
+          transition: 'opacity 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      >
+        SkySaver
+      </h1>
+
       {!loading && (
-        <div className="flex gap-3">
+        <div style={{
+          position: 'absolute',
+          right: '1.5rem',
+          display: 'flex',
+          gap: '0.75rem'
+        }}>
           {isAuthenticated ? (
             <>
               <button
                 onClick={() => navigate('/user')}
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white"
               >
                 My Account
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 text-white"
               >
                 Sign Out
               </button>
@@ -65,13 +94,13 @@ export default function Header() {
             <>
               <button
                 onClick={() => navigate('/login')}
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white"
               >
                 Sign In
               </button>
               <button
                 onClick={() => navigate('/signup')}
-                className="px-4 py-2 bg-green-600 rounded hover:bg-green-700"
+                className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 text-white"
               >
                 Sign Up
               </button>

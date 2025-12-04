@@ -14,12 +14,14 @@ function App() {
       <Route
         path="/"
         element={
-          <>
+          <div className="app-container">
             <Header />
-            <Card>
-              <MultiInputForm />
-            </Card>
-          </>
+            <main className="main-content">
+              <Card>
+                <MultiInputForm />
+              </Card>
+            </main>
+          </div>
         }
       />
       <Route path="/login" element={<Login />} />
